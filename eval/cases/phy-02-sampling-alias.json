@@ -1,0 +1,32 @@
+{
+  "id": "phy-02-sampling-alias",
+  "title": "高频正弦被显示成低频信号",
+  "domain": "Physics/EE",
+  "difficulty": "medium",
+  "input": {
+    "logText": "INPUT sine_wave frequency=1.000MHz amplitude=2Vpp source_verified=true\nSCOPE sample_rate=1.10MSa_s displayed_frequency=100kHz waveform=stable_sine\nSCOPE probe=10x ground=spring_short bandwidth=100MHz\nSTATUS clipping=false overrange=false external_trigger=stable\nOBSERVE displayed_frequency_equals_abs_input_minus_sample_rate=true",
+    "domainHint": "Physics/EE"
+  },
+  "expected": {
+    "trueCause": "采样率低于信号奈奎斯特要求，产生混叠频率",
+    "keywords": [
+      "采样率",
+      "混叠"
+    ],
+    "minimalControl": {
+      "action": "只提高采样率，保持探头、输入信号、带宽和触发设置不变。",
+      "paramDiff": [
+        {
+          "key": "采样率",
+          "before": "1.10 MSa/s",
+          "after": "10 MSa/s"
+        }
+      ]
+    }
+  },
+  "distractors": [
+    "探头衰减不匹配",
+    "输入频率漂移",
+    "接地线过长"
+  ]
+}

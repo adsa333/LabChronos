@@ -1,0 +1,32 @@
+{
+  "id": "ai-01-high-learning-rate",
+  "title": "训练从首轮开始持续振荡",
+  "domain": "AI/ML",
+  "difficulty": "easy",
+  "input": {
+    "logText": "CONFIG optimizer=SGD learning_rate=0.05 momentum=0.9 warmup_epochs=0 amp_enabled=false\nDATA_CHECK nan_count=0 inf_count=0 label_validation=passed\nEPOCH 001 loss=4.120 grad_norm=2.30\nEPOCH 002 loss=3.860 grad_norm=2.80\nEPOCH 003 loss=4.470 grad_norm=3.10\nEPOCH 004 loss=3.710 grad_norm=2.60\nEPOCH 005 loss=4.620 grad_norm=3.40\nEPOCH 006 loss=3.680 grad_norm=2.50\nOBSERVE loss_oscillates_from_first_epoch=true non_finite_loss=false",
+    "domainHint": "AI/ML"
+  },
+  "expected": {
+    "trueCause": "初始学习率过高且缺少 Warmup",
+    "keywords": [
+      "学习率",
+      "Warmup"
+    ],
+    "minimalControl": {
+      "action": "只降低初始学习率，保持数据、优化器、动量和其他训练设置不变。",
+      "paramDiff": [
+        {
+          "key": "learning_rate",
+          "before": "0.05",
+          "after": "0.005"
+        }
+      ]
+    }
+  },
+  "distractors": [
+    "输入数据含 NaN",
+    "AMP 梯度溢出",
+    "log(0) 数值错误"
+  ]
+}

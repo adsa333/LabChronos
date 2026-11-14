@@ -1,0 +1,15 @@
+类别,参数,值
+训练,框架,PyTorch AMP
+训练,精度模式,autocast + GradScaler
+训练,优化器,AdamW
+训练,初始学习率,0.001
+训练,Warmup,0 epochs
+训练,Batch size,128
+训练,随机种子,42
+训练,数据顺序,固定
+梯度,梯度裁剪,未启用
+日志,grad_norm,优化器更新前记录
+故障,Epoch 13,Loss=1.20; grad_norm=128.60
+故障,Epoch 14,Loss=9.80; grad_norm=inf
+故障,Epoch 15,Loss=NaN
+对照实验,唯一修改变量,梯度裁剪 max_norm: 未启用 → 1.0

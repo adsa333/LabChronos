@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900">
+  <defs>
+    <style>
+      .title { font: 700 30px Arial, sans-serif; fill: #edf7f5; }
+      .subtitle { font: 18px Consolas, monospace; fill: #8ca3ad; }
+      .lane { font: 700 18px Consolas, monospace; fill: #c9d9d9; }
+      .small { font: 15px Consolas, monospace; fill: #718792; }
+    </style>
+    <filter id="blur4"><feGaussianBlur stdDeviation="4"/></filter>
+    <filter id="blur10"><feGaussianBlur stdDeviation="10"/></filter>
+    <filter id="blur18"><feGaussianBlur stdDeviation="18"/></filter>
+    <linearGradient id="smearStrong" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a9fff1" stop-opacity="0.88"/>
+      <stop offset="0.35" stop-color="#5de7e0" stop-opacity="0.52"/>
+      <stop offset="1" stop-color="#26b7c9" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="smearMedium" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#a9fff1" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#26b7c9" stop-opacity="0"/>
+    </linearGradient>
+    <radialGradient id="well" cx="50%" cy="40%" r="70%">
+      <stop offset="0" stop-color="#020609"/>
+      <stop offset="1" stop-color="#102c36"/>
+    </radialGradient>
+  </defs>
+  <rect width="1400" height="900" fill="#080d13"/>
+  <text x="70" y="58" class="title">DNA gel electrophoresis — loading-dependent smearing</text>
+  <text x="70" y="88" class="subtitle">0.8% agarose · 1× TAE · 100 V · 35 min · same DNA sample</text>
+  <text x="1330" y="58" text-anchor="end" class="subtitle">SYNTHETIC GEL</text>
+
+  <rect x="70" y="115" width="1260" height="690" rx="22" fill="#0a2530" stroke="#31515b" stroke-width="3"/>
+  <rect x="88" y="133" width="1224" height="654" rx="16" fill="#061820"/>
+  <path d="M95 720 C330 690 540 750 790 710 S1160 700 1305 730 L1305 785 L95 785 Z" fill="#0c303a" opacity="0.55"/>
+
+  <g class="lane" text-anchor="middle">
+    <text x="180" y="155">Marker</text><text x="380" y="155">100 ng</text>
+    <text x="580" y="155">250 ng</text><text x="780" y="155">500 ng</text>
+    <text x="980" y="155">500 ng</text><text x="1180" y="155">100 ng</text>
+  </g>
+  <g fill="url(#well)" stroke="#31515b" stroke-width="2">
+    <rect x="135" y="176" width="90" height="32" rx="9"/><rect x="335" y="176" width="90" height="32" rx="9"/>
+    <rect x="535" y="176" width="90" height="32" rx="9"/><rect x="735" y="176" width="90" height="32" rx="9"/>
+    <rect x="935" y="176" width="90" height="32" rx="9"/><rect x="1135" y="176" width="90" height="32" rx="9"/>
+  </g>
+
+  <g fill="#a8fff1" filter="url(#blur4)">
+    <rect x="142" y="260" width="76" height="10" rx="5" opacity="0.65"/>
+    <rect x="142" y="325" width="76" height="11" rx="5" opacity="0.8"/>
+    <rect x="142" y="398" width="76" height="12" rx="5" opacity="0.9"/>
+    <rect x="142" y="480" width="76" height="13" rx="5" opacity="0.85"/>
+    <rect x="142" y="575" width="76" height="14" rx="5" opacity="0.75"/>
+    <rect x="142" y="675" width="76" height="15" rx="5" opacity="0.6"/>
+  </g>
+
+  <g>
+    <rect x="344" y="333" width="72" height="190" rx="30" fill="url(#smearMedium)" filter="url(#blur10)" opacity="0.22"/>
+    <rect x="337" y="315" width="86" height="20" rx="10" fill="#a8fff1" filter="url(#blur4)" opacity="0.78"/>
+    <rect x="1144" y="333" width="72" height="180" rx="30" fill="url(#smearMedium)" filter="url(#blur10)" opacity="0.2"/>
+    <rect x="1137" y="315" width="86" height="20" rx="10" fill="#a8fff1" filter="url(#blur4)" opacity="0.75"/>
+  </g>
+
+  <g>
+    <path d="M540 320 C545 390 530 470 550 550 C570 575 610 575 625 540 C640 460 615 390 620 320 Z" fill="url(#smearMedium)" filter="url(#blur10)" opacity="0.52"/>
+    <rect x="528" y="306" width="104" height="29" rx="14" fill="#a8fff1" filter="url(#blur4)" opacity="0.88"/>
+    <path d="M555 340 C560 405 550 470 565 535" stroke="#a8fff1" stroke-width="13" opacity="0.18" filter="url(#blur10)"/>
+  </g>
+
+  <g>
+    <path d="M724 305 C715 385 710 490 738 625 C765 670 820 660 840 610 C860 490 835 385 836 305 Z" fill="url(#smearStrong)" filter="url(#blur10)"/>
+    <path d="M924 305 C915 390 920 500 940 640 C970 675 1025 655 1040 605 C1055 485 1035 380 1036 305 Z" fill="url(#smearStrong)" filter="url(#blur10)"/>
+    <ellipse cx="780" cy="405" rx="62" ry="110" fill="#6ff5e9" opacity="0.16" filter="url(#blur18)"/>
+    <ellipse cx="980" cy="415" rx="65" ry="120" fill="#6ff5e9" opacity="0.18" filter="url(#blur18)"/>
+    <rect x="716" y="286" width="128" height="42" rx="20" fill="#c0fff5" filter="url(#blur4)"/>
+    <rect x="916" y="286" width="128" height="42" rx="20" fill="#c0fff5" filter="url(#blur4)"/>
+    <path d="M748 335 C735 420 760 520 750 610" stroke="#b4fff3" stroke-width="16" opacity="0.24" filter="url(#blur10)"/>
+    <path d="M956 335 C945 425 965 525 958 625" stroke="#b4fff3" stroke-width="17" opacity="0.25" filter="url(#blur10)"/>
+  </g>
+
+  <g class="small">
+    <text x="180" y="755" text-anchor="middle">DNA ladder</text>
+    <text x="380" y="755" text-anchor="middle">narrow band</text>
+    <text x="580" y="755" text-anchor="middle">moderate tail</text>
+    <text x="780" y="755" text-anchor="middle">bright band + strong tail</text>
+    <text x="980" y="755" text-anchor="middle">replicate</text>
+    <text x="1180" y="755" text-anchor="middle">narrow band</text>
+  </g>
+  <text x="70" y="850" class="subtitle">Observation: strong main bands remain visible; smearing increases with DNA mass per lane.</text>
+</svg>

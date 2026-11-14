@@ -1,0 +1,32 @@
+{
+  "id": "bio-03-gel-overheating",
+  "title": "凝胶两侧泳道弯曲呈微笑形",
+  "domain": "Bio/Chem",
+  "difficulty": "easy",
+  "input": {
+    "logText": "GEL agarose=1.0% buffer=fresh_1x_TAE dna_mass_per_lane=100ng\nRUN voltage=180V duration=45min gel_center_temperature=31C gel_edge_temperature=39C\nRESULT outer_lanes=curved_smiling_bands center_lanes=straight_bands\nRESULT band_brightness=uniform loading_difference=none buffer_reuse=0\nOBSERVE same_sample_all_lanes=true",
+    "domainHint": "Bio/Chem"
+  },
+  "expected": {
+    "trueCause": "电泳电压过高导致凝胶边缘发热和迁移不均",
+    "keywords": [
+      "电压",
+      "发热"
+    ],
+    "minimalControl": {
+      "action": "只降低电泳电压，保持上样量、凝胶、缓冲液和电泳时间不变。",
+      "paramDiff": [
+        {
+          "key": "电泳电压",
+          "before": "180 V",
+          "after": "80 V"
+        }
+      ]
+    }
+  },
+  "distractors": [
+    "DNA 上样量过大",
+    "缓冲液反复使用",
+    "DNA 样品降解"
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "id": "bio-01-pcr-annealing-high",
+  "title": "PCR 目标条带完全缺失",
+  "domain": "Bio/Chem",
+  "difficulty": "medium",
+  "input": {
+    "logText": "PCR target_size=800bp primer_tm=55-58C annealing_temp=68C cycles=35\nREAGENT polymerase=fresh buffer=correct mgcl2=standard template_integrity=passed\nLADDER bands=clear positive_template=same_batch\nRESULT target_800bp_band=absent nonspecific_bands=absent primer_dimer=weak\nCONTROL polymerase_activity=passed template_pcr_inhibitors=not_detected",
+    "domainHint": "Bio/Chem"
+  },
+  "expected": {
+    "trueCause": "PCR 退火温度高于引物适宜范围，导致特异结合不足",
+    "keywords": [
+      "退火温度",
+      "引物结合"
+    ],
+    "minimalControl": {
+      "action": "只降低退火温度，保持引物、模板、酶、缓冲液和循环数不变。",
+      "paramDiff": [
+        {
+          "key": "退火温度",
+          "before": "68°C",
+          "after": "56°C"
+        }
+      ]
+    }
+  },
+  "distractors": [
+    "DNA 模板降解",
+    "聚合酶失活",
+    "缓冲液配制错误"
+  ]
+}

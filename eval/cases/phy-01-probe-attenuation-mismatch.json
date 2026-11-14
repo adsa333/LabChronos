@@ -1,0 +1,32 @@
+{
+  "id": "phy-01-probe-attenuation-mismatch",
+  "title": "示波器幅值恰好放大十倍",
+  "domain": "Physics/EE",
+  "difficulty": "easy",
+  "input": {
+    "logText": "INPUT sine_wave frequency=1kHz expected_amplitude=0.5Vpp\nPROBE physical_attenuation=1x ground=spring_short sample_rate=100MSa_s\nSCOPE channel_attenuation_setting=10x measured_amplitude=5.0Vpp measured_frequency=1kHz\nSTATUS clipping=false adc_overrange=false waveform_shape=normal_sine\nOBSERVE amplitude_ratio=10.0 frequency_ratio=1.0",
+    "domainHint": "Physics/EE"
+  },
+  "expected": {
+    "trueCause": "探头物理衰减与示波器通道衰减设置不一致",
+    "keywords": [
+      "探头衰减",
+      "通道设置"
+    ],
+    "minimalControl": {
+      "action": "只将示波器通道衰减设置改为与探头一致，探头和输入信号不变。",
+      "paramDiff": [
+        {
+          "key": "通道衰减设置",
+          "before": "10×",
+          "after": "1×"
+        }
+      ]
+    }
+  },
+  "distractors": [
+    "输入超量程",
+    "采样率不足",
+    "探头接地线过长"
+  ]
+}
