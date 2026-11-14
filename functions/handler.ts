@@ -1,4 +1,5 @@
 import { parseDiagnosisContent } from "./diagnosis.ts";
+import { SYSTEM_PROMPT } from "./prompts/diagnose.ts";
 
 const MAX_IMAGE_BASE64_LENGTH = 4 * 1024 * 1024;
 const MAX_LOG_LENGTH = 15_000;
@@ -203,12 +204,6 @@ async function callModel(
   return choice.message.content;
 }
 
-let systemPrompt: Promise<string> | undefined;
-function readSystemPrompt(): Promise<string> {
-  systemPrompt ??= Deno.readTextFile(new URL("./prompts/diagnose.md", import.meta.url));
-  return systemPrompt;
-}
-
 export function createHandler(options: HandlerOptions = {}) {
   const env = options.env ?? ((name: string) => Deno.env.get(name));
   const fetcher = options.fetch ?? globalThis.fetch;
@@ -263,7 +258,6 @@ export function createHandler(options: HandlerOptions = {}) {
       }
 
       const input = await validateDiagnoseInput(request);
-      const prompt = await readSystemPrompt();
       const text = [
         input.domainHint ? `实验领域提示：${input.domainHint}` : "实验领域提示：未提供，请依据材料判断。",
         input.logText?.trim() ? `实验日志：\n${input.logText}` : "实验日志：未提供。",
@@ -274,7 +268,7 @@ export function createHandler(options: HandlerOptions = {}) {
         ...(input.imageDataUrl ? [{ type: "image_url" as const, image_url: { url: input.imageDataUrl } }] : []),
       ];
       const messages: ChatMessage[] = [
-        { role: "system", content: prompt },
+        { role: "system", content: SYSTEM_PROMPT },
         { role: "user", content: userContent },
       ];
 
