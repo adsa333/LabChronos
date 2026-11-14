@@ -36,13 +36,13 @@ function CauseNode({ data }: NodeProps<TreeNodeData>) {
       initial={{ opacity: 0, scale: 0.96 }}
       animate={{ opacity: data.status === 'pruned' ? 0.38 : 1, scale: 1 }}
       transition={{ duration: 0.25 }}
-      className={`relative rounded-lg border px-4 py-3 ${statusStyles[data.status]} ${data.status === 'root' ? 'w-[170px]' : isSubCause ? 'w-[140px] px-2.5 py-2' : 'w-[190px] px-3'}`}
+      className={`relative rounded-lg border ${statusStyles[data.status]} ${data.status === 'root' ? 'w-[160px] px-4 py-3' : isSubCause ? 'w-[170px] px-2 py-1.5' : 'w-[190px] px-3 py-2'}`}
     >
       <Handle type="target" position={Position.Left} className="!h-2 !w-2 !border-0 !bg-pruned" />
-      <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.14em] opacity-70">{data.eyebrow}</div>
-      <div className={`${isSubCause ? 'text-[12px] leading-5' : 'text-[14px] leading-6'} font-medium`}>{data.title}</div>
+      {!isSubCause && <div className="mb-1 font-mono text-[10px] uppercase tracking-[0.14em] opacity-70">{data.eyebrow}</div>}
+      <div className={`${isSubCause ? 'line-clamp-3 text-[11px] leading-4' : 'text-[14px] leading-6'} font-medium`}>{data.title}</div>
       {data.probability !== undefined && (
-        <div className="mt-3">
+        <div className="mt-2">
           <div className="mb-1.5 flex items-center justify-between font-mono text-[10px]">
             <span className="opacity-60">PROBABILITY</span>
             <span className={data.status === 'locked' ? 'text-truth' : 'text-ink'}>{(data.probability * 100).toFixed(1)}%</span>
@@ -77,14 +77,14 @@ export default function CausalTree({ diagnosis, scores, prunedIds, lockedId }: C
     const nextEdges: Edge[] = []
 
     diagnosis.hypotheses.forEach((hypothesis, hypothesisIndex) => {
-      const y = hypothesisIndex * 180
+      const y = hypothesisIndex * 145
       const pruned = prunedIds.includes(hypothesis.id)
       const locked = lockedId === hypothesis.id
       const status: NodeStatus = locked ? 'locked' : pruned ? 'pruned' : 'active'
       nextNodes.push({
         id: hypothesis.id,
         type: 'cause',
-        position: { x: 200, y },
+        position: { x: 180, y },
         draggable: false,
         data: {
           eyebrow: `${hypothesis.id} · HYPOTHESIS`,
@@ -108,7 +108,7 @@ export default function CausalTree({ diagnosis, scores, prunedIds, lockedId }: C
           nextNodes.push({
             id: subId,
             type: 'cause',
-            position: { x: 420, y: y + subIndex * 82 },
+            position: { x: 400, y: y + subIndex * 50 },
             draggable: false,
             data: { eyebrow: `${hypothesis.id}.${subIndex + 1} · SUB-CAUSE`, title: subCause, status },
           })
@@ -133,11 +133,8 @@ export default function CausalTree({ diagnosis, scores, prunedIds, lockedId }: C
         edges={edges}
         nodeTypes={nodeTypes}
         fitView
-        onInit={(instance) => {
-          requestAnimationFrame(() => instance.setViewport({ x: 24, y: 24, zoom: 1 }))
-        }}
-        fitViewOptions={{ padding: 0.06, maxZoom: 1.2 }}
-        minZoom={0.6}
+        fitViewOptions={{ padding: 0.04, maxZoom: 1.15 }}
+        minZoom={0.7}
         maxZoom={1.5}
         nodesDraggable={false}
         nodesConnectable={false}
