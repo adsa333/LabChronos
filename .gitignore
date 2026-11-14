@@ -27,3 +27,5 @@ dist-ssr
 .review
 # Qoder Sites deployment anchor (keep local, do not publish)
 .LabChronos.qoder.site
+
+eval/report.json
