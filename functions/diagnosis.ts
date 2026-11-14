@@ -104,11 +104,11 @@ const diagnosisSchema = z.object({
         }
       } else {
         const deltas = Object.values(option.scoreDelta);
-        if (!deltas.some((delta) => delta >= 15) || !deltas.some((delta) => delta <= -10)) {
+        if (!deltas.some((delta) => delta > 0) || !deltas.some((delta) => delta < 0)) {
           context.addIssue({
             code: z.ZodIssueCode.custom,
             path: ["questions", questionIndex, "options", optionIndex, "scoreDelta"],
-            message: "实质性选项必须包含 >=+15 与 <=-10 的互斥区分",
+            message: "实质性选项必须包含 >0 与 <0 的正负加减分",
           });
         }
       }

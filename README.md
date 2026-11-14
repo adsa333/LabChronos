@@ -18,6 +18,23 @@ npm run build   # tsc -b && vite build
 
 Node ≥ 20。Windows 下若 PowerShell 拦截 npm，改用 `npm.cmd`。
 
+## 环境变量与评测（M2）
+
+- `VISION_API_KEY`：OpenAI 兼容多模态接口密钥。只在当前终端或 Qoder Sites Secrets 中配置，不要提交真实密钥。
+- `VISION_BASE_URL`：OpenAI 兼容接口基础地址。可使用阿里云百炼 DashScope 兼容端点 `https://dashscope.aliyuncs.com/compatible-mode/v1`，或百炼业务空间专属兼容端点。
+- `VISION_MODEL`：多模态视觉模型名称，当前选定为 `qwen3-vl-plus`。
+
+在当前终端注入环境变量后运行评测：
+
+```bash
+export VISION_API_KEY="sk-xxx"
+export VISION_BASE_URL="https://dashscope.aliyuncs.com/compatible-mode/v1"
+export VISION_MODEL="qwen3-vl-plus"
+node eval/run-eval.mjs
+```
+
+脚本会依次评测 15 个标准病例与 3 组图片/日志多模态病例，并生成脱敏的 `eval/report.json`。
+
 ## 技术栈
 
 React 18 · Vite 8 · TypeScript · Tailwind 3.4 · React Flow 11 · Framer Motion 11 · Lucide

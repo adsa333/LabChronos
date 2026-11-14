@@ -1,0 +1,634 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-11-14T14:28:32.374Z",
+  "model": "qwen3-vl-plus",
+  "prompt": {
+    "source": "functions/prompts/diagnose.ts",
+    "sha256": "8da835e11a3d6368d38d1b576a08f05f0380df7a4834fec8d11c363c6a88d377"
+  },
+  "methodology": {
+    "top1Denominator": "finalValidCount",
+    "match": "NFKC 规范化后，假设内容包含 expected.trueCause，或包含任一 expected.keywords，即判为命中。",
+    "idealAnswers": "枚举每题全部实质性选项（排除末位不确定），按 weight=max(5, priorScore+sum(scoreDelta)) 推演，选择正确假设夺冠且概率最高的路径。",
+    "privacy": "不保存输入、图片、expected、distractors、模型原文、上游响应或密钥。"
+  },
+  "summary": {
+    "totalCases": 18,
+    "multimodalCases": 3,
+    "totalDurationMs": 653983,
+    "firstPassCount": 13,
+    "retriedCount": 5,
+    "finalValidCount": 15,
+    "initialTop1Hits": 13,
+    "finalTop1Hits": 13,
+    "firstPassRate": 0.7222,
+    "finalLegalRate": 0.8333,
+    "initialTop1HitRate": 0.8667,
+    "finalTop1HitRate": 0.8667
+  },
+  "results": [
+    {
+      "id": "ai-01-high-learning-rate",
+      "source": "cases",
+      "multimodal": false,
+      "durationMs": 29033,
+      "firstAttemptMs": 29030,
+      "retryAttemptMs": null,
+      "firstPass": true,
+      "retried": false,
+      "finalValid": true,
+      "initialTop1": {
+        "hypothesisId": "h1",
+        "title": "学习率过高导致优化路径穿越损失曲面鞍点/陡坡",
+        "priorScore": 45,
+        "hit": true
+      },
+      "finalTop1": {
+        "hypothesisId": "h1",
+        "title": "学习率过高导致优化路径穿越损失曲面鞍点/陡坡",
+        "probability": 0.7857,
+        "hit": true
+      },
+      "idealAnswers": [
+        {
+          "questionId": "q1",
+          "optionIndex": 1
+        },
+        {
+          "questionId": "q2",
+          "optionIndex": 0
+        }
+      ],
+      "firstParseFeedback": null,
+      "finalParseFeedback": null,
+      "error": null
+    },
+    {
+      "id": "ai-02-nan-input-features",
+      "source": "cases",
+      "multimodal": false,
+      "durationMs": 25631,
+      "firstAttemptMs": 25630,
+      "retryAttemptMs": null,
+      "firstPass": true,
+      "retried": false,
+      "finalValid": true,
+      "initialTop1": {
+        "hypothesisId": "h1",
+        "title": "特征列预处理引入NaN（如除零或log(0)）",
+        "priorScore": 45,
+        "hit": true
+      },
+      "finalTop1": {
+        "hypothesisId": "h1",
+        "title": "特征列预处理引入NaN（如除零或log(0)）",
+        "probability": 0.84,
+        "hit": true
+      },
+      "idealAnswers": [
+        {
+          "questionId": "q1",
+          "optionIndex": 0
+        },
+        {
+          "questionId": "q2",
+          "optionIndex": 0
+        }
+      ],
+      "firstParseFeedback": null,
+      "finalParseFeedback": null,
+      "error": null
+    },
+    {
+      "id": "ai-03-validation-mode-mismatch",
+      "source": "cases",
+      "multimodal": false,
+      "durationMs": 27373,
+      "firstAttemptMs": 27372,
+      "retryAttemptMs": null,
+      "firstPass": true,
+      "retried": false,
+      "finalValid": true,
+      "initialTop1": {
+        "hypothesisId": "h1",
+        "title": "验证时Dropout未被正确禁用（推理模式误用训练模式）",
+        "priorScore": 45,
+        "hit": true
+      },
+      "finalTop1": {
+        "hypothesisId": "h1",
+        "title": "验证时Dropout未被正确禁用（推理模式误用训练模式）",
+        "probability": 0.8148,
+        "hit": true
+      },
+      "idealAnswers": [
+        {
+          "questionId": "q1",
+          "optionIndex": 0
+        },
+        {
+          "questionId": "q2",
+          "optionIndex": 1
+        }
+      ],
+      "firstParseFeedback": null,
+      "finalParseFeedback": null,
+      "error": null
+    },
+    {
+      "id": "ai-04-scheduler-gamma-error",
+      "source": "cases",
+      "multimodal": false,
+      "durationMs": 60387,
+      "firstAttemptMs": 29896,
+      "retryAttemptMs": 30490,
+      "firstPass": false,
+      "retried": true,
+      "finalValid": false,
+      "initialTop1": null,
+      "finalTop1": null,
+      "idealAnswers": [],
+      "firstParseFeedback": "questions.1.options.0: 实质性选项必须包含 >=+15 与 <=-10 的互斥区分",
+      "finalParseFeedback": "questions.1.options.0: 实质性选项必须包含 >=+15 与 <=-10 的互斥区分",
+      "error": {
+        "phase": "parse",
+        "code": "diagnosis_parse_failed",
+        "status": null
+      }
+    },
+    {
+      "id": "ai-05-class-imbalance",
+      "source": "cases",
+      "multimodal": false,
+      "durationMs": 56253,
+      "firstAttemptMs": 27845,
+      "retryAttemptMs": 28408,
+      "firstPass": false,
+      "retried": true,
+      "finalValid": false,
+      "initialTop1": null,
+      "finalTop1": null,
+      "idealAnswers": [],
+      "firstParseFeedback": "questions.1.options.0: 实质性选项必须包含 >=+15 与 <=-10 的互斥区分；questions.1.options.1: 实质性选项必须包含 >=+15 与 <=-10 的互斥区分",
+      "finalParseFeedback": "questions.1.options.0: 实质性选项必须包含 >=+15 与 <=-10 的互斥区分；questions.1.options.1: 实质性选项必须包含 >=+15 与 <=-10 的互斥区分",
+      "error": {
+        "phase": "parse",
+        "code": "diagnosis_parse_failed",
+        "status": null
+      }
+    },
+    {
+      "id": "ai-06-log-zero-loss",
+      "source": "cases",
+      "multimodal": false,
+      "durationMs": 28558,
+      "firstAttemptMs": 28557,
+      "retryAttemptMs": null,
+      "firstPass": true,
+      "retried": false,
+      "finalValid": true,
+      "initialTop1": {
+        "hypothesisId": "h1",
+        "title": "Softmax/Sigmoid 输出饱和导致 log(0) 数值下溢",
+        "priorScore": 50,
+        "hit": true
+      },
+      "finalTop1": {
+        "hypothesisId": "h1",
+        "title": "Softmax/Sigmoid 输出饱和导致 log(0) 数值下溢",
+        "probability": 0.8214,
+        "hit": true
+      },
+      "idealAnswers": [
+        {
+          "questionId": "q1",
+          "optionIndex": 0
+        },
+        {
+          "questionId": "q2",
+          "optionIndex": 0
+        }
+      ],
+      "firstParseFeedback": null,
+      "finalParseFeedback": null,
+      "error": null
+    },
+    {
+      "id": "bio-01-pcr-annealing-high",
+      "source": "cases",
+      "multimodal": false,
+      "durationMs": 24918,
+      "firstAttemptMs": 24917,
+      "retryAttemptMs": null,
+      "firstPass": true,
+      "retried": false,
+      "finalValid": true,
+      "initialTop1": {
+        "hypothesisId": "h1",
+        "title": "退火温度过高导致引物无法有效结合模板",
+        "priorScore": 45,
+        "hit": true
+      },
+      "finalTop1": {
+        "hypothesisId": "h2",
+        "title": "模板二级结构阻碍引物结合",
+        "probability": 0.7619,
+        "hit": true
+      },
+      "idealAnswers": [
+        {
+          "questionId": "q1",
+          "optionIndex": 1
+        },
+        {
+          "questionId": "q2",
+          "optionIndex": 1
+        }
+      ],
+      "firstParseFeedback": null,
+      "finalParseFeedback": null,
+      "error": null
+    },
+    {
+      "id": "bio-02-pcr-annealing-low",
+      "source": "cases",
+      "multimodal": false,
+      "durationMs": 28540,
+      "firstAttemptMs": 28539,
+      "retryAttemptMs": null,
+      "firstPass": true,
+      "retried": false,
+      "finalValid": true,
+      "initialTop1": {
+        "hypothesisId": "h1",
+        "title": "退火温度过低导致引物错配延伸",
+        "priorScore": 45,
+        "hit": true
+      },
+      "finalTop1": {
+        "hypothesisId": "h1",
+        "title": "退火温度过低导致引物错配延伸",
+        "probability": 0.8148,
+        "hit": true
+      },
+      "idealAnswers": [
+        {
+          "questionId": "q1",
+          "optionIndex": 1
+        },
+        {
+          "questionId": "q2",
+          "optionIndex": 0
+        }
+      ],
+      "firstParseFeedback": null,
+      "finalParseFeedback": null,
+      "error": null
+    },
+    {
+      "id": "bio-03-gel-overheating",
+      "source": "cases",
+      "multimodal": false,
+      "durationMs": 28832,
+      "firstAttemptMs": 28831,
+      "retryAttemptMs": null,
+      "firstPass": true,
+      "retried": false,
+      "finalValid": true,
+      "initialTop1": {
+        "hypothesisId": "h1",
+        "title": "边缘过热导致凝胶局部熔化/孔径增大",
+        "priorScore": 45,
+        "hit": true
+      },
+      "finalTop1": {
+        "hypothesisId": "h1",
+        "title": "边缘过热导致凝胶局部熔化/孔径增大",
+        "probability": 0.8148,
+        "hit": true
+      },
+      "idealAnswers": [
+        {
+          "questionId": "q1",
+          "optionIndex": 0
+        },
+        {
+          "questionId": "q2",
+          "optionIndex": 0
+        }
+      ],
+      "firstParseFeedback": null,
+      "finalParseFeedback": null,
+      "error": null
+    },
+    {
+      "id": "bio-04-enzyme-inactive",
+      "source": "cases",
+      "multimodal": false,
+      "durationMs": 53475,
+      "firstAttemptMs": 26655,
+      "retryAttemptMs": 26820,
+      "firstPass": false,
+      "retried": true,
+      "finalValid": true,
+      "initialTop1": {
+        "hypothesisId": "h1",
+        "title": "质粒DNA存在EcoRI位点甲基化阻断",
+        "priorScore": 45,
+        "hit": false
+      },
+      "finalTop1": {
+        "hypothesisId": "h2",
+        "title": "质粒DNA结构异常导致酶无法接近位点",
+        "probability": 0.75,
+        "hit": false
+      },
+      "idealAnswers": [
+        {
+          "questionId": "q1",
+          "optionIndex": 1
+        },
+        {
+          "questionId": "q2",
+          "optionIndex": 0
+        }
+      ],
+      "firstParseFeedback": "questions.1.options.1: 实质性选项必须包含 >=+15 与 <=-10 的互斥区分",
+      "finalParseFeedback": null,
+      "error": null
+    },
+    {
+      "id": "bio-05-dna-freeze-thaw",
+      "source": "cases",
+      "multimodal": false,
+      "durationMs": 54020,
+      "firstAttemptMs": 26930,
+      "retryAttemptMs": 27090,
+      "firstPass": false,
+      "retried": true,
+      "finalValid": true,
+      "initialTop1": {
+        "hypothesisId": "h1",
+        "title": "反复冻融导致质粒超螺旋结构不可逆解旋与断裂",
+        "priorScore": 45,
+        "hit": true
+      },
+      "finalTop1": {
+        "hypothesisId": "h1",
+        "title": "反复冻融导致质粒超螺旋结构不可逆解旋与断裂",
+        "probability": 0.7143,
+        "hit": true
+      },
+      "idealAnswers": [
+        {
+          "questionId": "q1",
+          "optionIndex": 0
+        },
+        {
+          "questionId": "q2",
+          "optionIndex": 1
+        }
+      ],
+      "firstParseFeedback": "questions.1.options.1: 实质性选项必须包含 >=+15 与 <=-10 的互斥区分",
+      "finalParseFeedback": null,
+      "error": null
+    },
+    {
+      "id": "phy-01-probe-attenuation-mismatch",
+      "source": "cases",
+      "multimodal": false,
+      "durationMs": 53588,
+      "firstAttemptMs": 26477,
+      "retryAttemptMs": 27111,
+      "firstPass": false,
+      "retried": true,
+      "finalValid": false,
+      "initialTop1": null,
+      "finalTop1": null,
+      "idealAnswers": [],
+      "firstParseFeedback": "questions.0.options.0: 实质性选项必须包含 >=+15 与 <=-10 的互斥区分",
+      "finalParseFeedback": "questions.0.options.0: 实质性选项必须包含 >=+15 与 <=-10 的互斥区分",
+      "error": {
+        "phase": "parse",
+        "code": "diagnosis_parse_failed",
+        "status": null
+      }
+    },
+    {
+      "id": "phy-02-sampling-alias",
+      "source": "cases",
+      "multimodal": false,
+      "durationMs": 26309,
+      "firstAttemptMs": 26308,
+      "retryAttemptMs": null,
+      "firstPass": true,
+      "retried": false,
+      "finalValid": true,
+      "initialTop1": {
+        "hypothesisId": "h1",
+        "title": "采样混叠导致频率误判",
+        "priorScore": 50,
+        "hit": true
+      },
+      "finalTop1": {
+        "hypothesisId": "h1",
+        "title": "采样混叠导致频率误判",
+        "probability": 0.5,
+        "hit": true
+      },
+      "idealAnswers": [
+        {
+          "questionId": "q1",
+          "optionIndex": 1
+        },
+        {
+          "questionId": "q2",
+          "optionIndex": 1
+        }
+      ],
+      "firstParseFeedback": null,
+      "finalParseFeedback": null,
+      "error": null
+    },
+    {
+      "id": "phy-03-missing-decoupling",
+      "source": "cases",
+      "multimodal": false,
+      "durationMs": 31009,
+      "firstAttemptMs": 31008,
+      "retryAttemptMs": null,
+      "firstPass": true,
+      "retried": false,
+      "finalValid": true,
+      "initialTop1": {
+        "hypothesisId": "h1",
+        "title": "MCU电源引脚缺乏高频去耦导致共模噪声注入",
+        "priorScore": 45,
+        "hit": false
+      },
+      "finalTop1": {
+        "hypothesisId": "h2",
+        "title": "输入bulk电容ESR过高引发LC谐振",
+        "probability": 0.76,
+        "hit": false
+      },
+      "idealAnswers": [
+        {
+          "questionId": "q1",
+          "optionIndex": 1
+        },
+        {
+          "questionId": "q2",
+          "optionIndex": 0
+        }
+      ],
+      "firstParseFeedback": null,
+      "finalParseFeedback": null,
+      "error": null
+    },
+    {
+      "id": "phy-04-missing-termination",
+      "source": "cases",
+      "multimodal": false,
+      "durationMs": 27123,
+      "firstAttemptMs": 27122,
+      "retryAttemptMs": null,
+      "firstPass": true,
+      "retried": false,
+      "finalValid": true,
+      "initialTop1": {
+        "hypothesisId": "h1",
+        "title": "负载端开路导致全反射",
+        "priorScore": 45,
+        "hit": true
+      },
+      "finalTop1": {
+        "hypothesisId": "h1",
+        "title": "负载端开路导致全反射",
+        "probability": 0.875,
+        "hit": true
+      },
+      "idealAnswers": [
+        {
+          "questionId": "q1",
+          "optionIndex": 1
+        },
+        {
+          "questionId": "q2",
+          "optionIndex": 1
+        }
+      ],
+      "firstParseFeedback": null,
+      "finalParseFeedback": null,
+      "error": null
+    },
+    {
+      "id": "ai-training-nan",
+      "source": "presets",
+      "multimodal": true,
+      "durationMs": 31660,
+      "firstAttemptMs": 31659,
+      "retryAttemptMs": null,
+      "firstPass": true,
+      "retried": false,
+      "finalValid": true,
+      "initialTop1": {
+        "hypothesisId": "h1",
+        "title": "FP16下数值溢出引发梯度爆炸",
+        "priorScore": 45,
+        "hit": true
+      },
+      "finalTop1": {
+        "hypothesisId": "h1",
+        "title": "FP16下数值溢出引发梯度爆炸",
+        "probability": 0.913,
+        "hit": true
+      },
+      "idealAnswers": [
+        {
+          "questionId": "q1",
+          "optionIndex": 1
+        },
+        {
+          "questionId": "q2",
+          "optionIndex": 0
+        }
+      ],
+      "firstParseFeedback": null,
+      "finalParseFeedback": null,
+      "error": null
+    },
+    {
+      "id": "gel-electrophoresis-smearing",
+      "source": "presets",
+      "multimodal": true,
+      "durationMs": 33383,
+      "firstAttemptMs": 33382,
+      "retryAttemptMs": null,
+      "firstPass": true,
+      "retried": false,
+      "finalValid": true,
+      "initialTop1": {
+        "hypothesisId": "h1",
+        "title": "过载导致凝胶孔堵塞与局部电场畸变",
+        "priorScore": 45,
+        "hit": true
+      },
+      "finalTop1": {
+        "hypothesisId": "h1",
+        "title": "过载导致凝胶孔堵塞与局部电场畸变",
+        "probability": 0.75,
+        "hit": true
+      },
+      "idealAnswers": [
+        {
+          "questionId": "q1",
+          "optionIndex": 0
+        },
+        {
+          "questionId": "q2",
+          "optionIndex": 1
+        }
+      ],
+      "firstParseFeedback": null,
+      "finalParseFeedback": null,
+      "error": null
+    },
+    {
+      "id": "oscilloscope-ringing",
+      "source": "presets",
+      "multimodal": true,
+      "durationMs": 33891,
+      "firstAttemptMs": 33890,
+      "retryAttemptMs": null,
+      "firstPass": true,
+      "retried": false,
+      "finalValid": true,
+      "initialTop1": {
+        "hypothesisId": "h1",
+        "title": "长接地引线引入显著寄生电感，与探头/电路容性形成欠阻尼LC谐振",
+        "priorScore": 45,
+        "hit": true
+      },
+      "finalTop1": {
+        "hypothesisId": "h1",
+        "title": "长接地引线引入显著寄生电感，与探头/电路容性形成欠阻尼LC谐振",
+        "probability": 0.625,
+        "hit": true
+      },
+      "idealAnswers": [
+        {
+          "questionId": "q1",
+          "optionIndex": 0
+        },
+        {
+          "questionId": "q2",
+          "optionIndex": 0
+        }
+      ],
+      "firstParseFeedback": null,
+      "finalParseFeedback": null,
+      "error": null
+    }
+  ]
+}
