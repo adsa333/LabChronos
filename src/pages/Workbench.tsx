@@ -37,7 +37,7 @@ export default function Workbench() {
 
   return (
     <div className="h-screen min-w-[1180px] overflow-hidden bg-bg text-ink">
-      <header className="grid h-14 grid-cols-[320px_minmax(0,1fr)_380px] items-center gap-3 border-b border-line px-3">
+      <header className="grid h-14 grid-cols-[300px_minmax(0,1fr)_380px] items-center gap-3 border-b border-line px-3">
         <div className="flex items-center gap-2.5">
           <div className="flex h-9 w-9 items-center justify-center rounded-md border border-truth/40 bg-truth/10 text-truth">
             <FlaskConical size={18} strokeWidth={1.8} />
@@ -78,7 +78,7 @@ export default function Workbench() {
         </div>
       </header>
 
-      <main className="grid h-[calc(100vh-56px)] grid-cols-[320px_minmax(0,1fr)_380px] gap-3 p-3">
+      <main className="grid h-[calc(100vh-56px)] grid-cols-[300px_minmax(0,1fr)_380px] gap-3 p-3">
         <EvidencePanel preset={activeCase} />
         <section className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-line bg-panel">
           <PanelHeader index="02" title={activeCase.label} english="CAUSAL TREE" />

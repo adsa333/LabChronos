@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Check, CircleHelp, FlaskConical, Lock, RotateCcw } from 'lucide-react'
 import type { Answers, HypothesisScore } from '../lib/scoring'
@@ -18,6 +19,13 @@ export default function TriagePanel({ diagnosis, answers, scores, lockedId, onAn
   const answeredCount = Object.keys(answers).length
   const lockedHypothesis = lockedId ? diagnosis.hypotheses.find((hypothesis) => hypothesis.id === lockedId) : undefined
   const lockedScore = lockedId ? scores.find((score) => score.id === lockedId) : undefined
+  const lockedCardRef = useRef<HTMLElement | null>(null)
+
+  useEffect(() => {
+    if (!lockedId) return
+    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    lockedCardRef.current?.scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' })
+  }, [lockedId])
 
   return (
     <section className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-line bg-panel">
@@ -78,6 +86,7 @@ export default function TriagePanel({ diagnosis, answers, scores, lockedId, onAn
         {lockedHypothesis && lockedScore && (
           <motion.article
             key={lockedHypothesis.id}
+            ref={lockedCardRef}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
             className={`rounded-md border p-4 ${lockedScore.probability >= 0.6 ? 'border-truth/60 bg-truth/5' : 'border-suspect/50 bg-suspect/5'}`}
