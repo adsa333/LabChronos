@@ -1,0 +1,32 @@
+{
+  "id": "ai-02-nan-input-features",
+  "title": "固定批次触发 Loss NaN",
+  "domain": "AI/ML",
+  "difficulty": "medium",
+  "input": {
+    "logText": "CONFIG optimizer=Adam learning_rate=0.001 gradient_clip=1.0 amp_enabled=false\nEPOCH 236 loss=0.720 grad_norm=1.10 batch_id=236\nBATCH 237 input_feature_nan=3 input_feature_inf=0 label_nan=0\nDATA_SCAN batch_id=237 row_1842_feature_17=nan row_2091_feature_17=nan row_3310_feature_17=nan\nBATCH 237 loss=nan grad_norm=nan\nOBSERVE previous_batches_finite=true failure_repeats_at_same_batch=true",
+    "domainHint": "AI/ML"
+  },
+  "expected": {
+    "trueCause": "输入特征中包含 NaN，污染前向计算和梯度",
+    "keywords": [
+      "输入特征",
+      "NaN"
+    ],
+    "minimalControl": {
+      "action": "只修复已定位的 3 个异常特征值，使用训练集对应列均值替换，其他样本和训练配置不变。",
+      "paramDiff": [
+        {
+          "key": "异常特征值处理",
+          "before": "3 个 NaN 原样输入",
+          "after": "仅将这 3 个 NaN 替换为对应列均值"
+        }
+      ]
+    }
+  },
+  "distractors": [
+    "学习率过高",
+    "AMP 梯度溢出",
+    "损失函数 log(0)"
+  ]
+}

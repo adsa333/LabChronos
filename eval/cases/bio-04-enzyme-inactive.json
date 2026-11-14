@@ -1,0 +1,32 @@
+{
+  "id": "bio-04-enzyme-inactive",
+  "title": "质粒酶切后仍只有未切开条带",
+  "domain": "Bio/Chem",
+  "difficulty": "medium",
+  "input": {
+    "logText": "DIGEST enzyme=EcoRI buffer=recommended enzyme_storage=25C_for_4h_before_use\nSUBSTRATE plasmid_intact=true inhibitor_test=negative incubation=37C_60min\nRESULT sample_digest=uncut_band_only expected_fragments=absent\nCONTROL same_enzyme_with_control_DNA=uncut control_DNA_with_fresh_enzyme=cleaved\nOBSERVE reaction_buffer_and_temperature=correct",
+    "domainHint": "Bio/Chem"
+  },
+  "expected": {
+    "trueCause": "限制性内切酶因不当放置而失活",
+    "keywords": [
+      "限制性内切酶",
+      "失活"
+    ],
+    "minimalControl": {
+      "action": "只更换为按规范保存的同种新酶，底物、缓冲液、温度和反应时间不变。",
+      "paramDiff": [
+        {
+          "key": "EcoRI 酶状态",
+          "before": "室温放置 4 h 的酶",
+          "after": "按规范保存的同种新酶"
+        }
+      ]
+    }
+  },
+  "distractors": [
+    "酶切缓冲液错误",
+    "质粒降解",
+    "孵育温度错误"
+  ]
+}

@@ -1,0 +1,32 @@
+{
+  "id": "ai-04-scheduler-gamma-error",
+  "title": "学习率调度后 Loss 突然上升",
+  "domain": "AI/ML",
+  "difficulty": "medium",
+  "input": {
+    "logText": "CONFIG optimizer=Adam initial_lr=0.001 scheduler=StepLR step_size=1 gamma=10.0\nEPOCH 019 loss=0.840 lr=0.001 grad_norm=1.20\nEPOCH 020 loss=0.810 lr=0.001 grad_norm=1.10\nEPOCH 021 loss=1.940 lr=0.010 grad_norm=2.40\nEPOCH 022 loss=4.670 lr=0.100 grad_norm=4.80\nDATA_CHECK nan_count=0 inf_count=0\nOBSERVE loss_jump_follows_lr_increase=true non_finite_loss=false",
+    "domainHint": "AI/ML"
+  },
+  "expected": {
+    "trueCause": "StepLR 的 gamma 误设为 10，导致学习率逐步放大",
+    "keywords": [
+      "学习率调度",
+      "gamma"
+    ],
+    "minimalControl": {
+      "action": "只修正 StepLR 的 gamma，初始学习率、step_size 和其他训练配置不变。",
+      "paramDiff": [
+        {
+          "key": "StepLR gamma",
+          "before": "10.0",
+          "after": "0.1"
+        }
+      ]
+    }
+  },
+  "distractors": [
+    "数据含 NaN",
+    "AMP 梯度溢出",
+    "模型结构不适合任务"
+  ]
+}

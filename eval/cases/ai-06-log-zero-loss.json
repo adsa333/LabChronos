@@ -1,0 +1,32 @@
+{
+  "id": "ai-06-log-zero-loss",
+  "title": "自定义交叉熵突然出现 NaN",
+  "domain": "AI/ML",
+  "difficulty": "hard",
+  "input": {
+    "logText": "CONFIG custom_loss=-(y*log(p)+(1-y)*log(1-p)) epsilon=0 amp_enabled=false gradient_clip=1.0\nDATA_CHECK nan_count=0 inf_count=0 label_values_binary=true\nSTEP 1840 loss=0.420 grad_norm=0.90 prediction_min=0.0012 prediction_max=0.9980\nSTEP 1841 prediction_min=0.0000 prediction_max=1.0000 exact_zero_samples=2\nSTEP 1841 loss=nan grad_norm=nan\nOBSERVE optimizer_step_not_executed=true learning_rate=0.001",
+    "domainHint": "AI/ML"
+  },
+  "expected": {
+    "trueCause": "损失函数对零概率直接取 log(0)，缺少数值稳定项",
+    "keywords": [
+      "log(0)",
+      "数值稳定项"
+    ],
+    "minimalControl": {
+      "action": "只在计算对数前为预测值加入 epsilon 截断，模型、数据和优化器保持不变。",
+      "paramDiff": [
+        {
+          "key": "log 数值稳定项 epsilon",
+          "before": "0",
+          "after": "1e-7"
+        }
+      ]
+    }
+  },
+  "distractors": [
+    "输入标签含 NaN",
+    "AMP 梯度溢出",
+    "学习率调度错误"
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "id": "bio-05-dna-freeze-thaw",
+  "title": "DNA 主带减弱并出现低分子量弥散",
+  "domain": "Bio/Chem",
+  "difficulty": "easy",
+  "input": {
+    "logText": "SAMPLE plasmid_DNA freeze_thaw_cycles=6 storage_history=recorded\nGEL agarose=0.8% buffer=fresh_1x_TAE dna_mass_per_lane=100ng voltage=100V\nRESULT original_sample_main_band=weak low_mw_smear=strong\nRESULT same_batch_unfrozen_control_main_band=strong low_mw_smear=minimal\nOBSERVE loading_and_electrophoresis_conditions_identical=true",
+    "domainHint": "Bio/Chem"
+  },
+  "expected": {
+    "trueCause": "DNA 样品因反复冻融发生降解",
+    "keywords": [
+      "DNA",
+      "降解",
+      "冻融"
+    ],
+    "minimalControl": {
+      "action": "只将原样品换成同批次未冻融等分样品，上样量和电泳条件不变。",
+      "paramDiff": [
+        {
+          "key": "DNA 样品状态",
+          "before": "冻融 6 次的样品",
+          "after": "同批次未冻融等分样品"
+        }
+      ]
+    }
+  },
+  "distractors": [
+    "上样量过大",
+    "电压过高",
+    "缓冲液反复使用"
+  ]
+}

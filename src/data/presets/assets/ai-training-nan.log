@@ -1,0 +1,13 @@
+2026-11-14 09:00:00 CONFIG seed=42 optimizer=AdamW learning_rate=0.001 warmup_epochs=0 batch_size=128
+2026-11-14 09:00:00 CONFIG amp_enabled=true autocast=true gradient_clipping=disabled data_order=fixed
+2026-11-14 09:00:00 CONFIG loss_curve_unit=cross_entropy grad_norm_logged_before_optimizer_step=true
+2026-11-14 09:00:01 EPOCH 001 loss=4.200 grad_norm=0.82 lr=0.001
+2026-11-14 09:00:05 EPOCH 005 loss=2.400 grad_norm=1.10 lr=0.001
+2026-11-14 09:00:10 EPOCH 010 loss=1.500 grad_norm=1.90 lr=0.001
+2026-11-14 09:00:12 EPOCH 012 loss=1.310 grad_norm=3.80 lr=0.001
+2026-11-14 09:00:13 EPOCH 013 loss=1.200 grad_norm=128.60 lr=0.001
+2026-11-14 09:00:14 EPOCH 014 PRE_STEP loss=9.800 grad_norm=inf amp_enabled=true gradient_clipping=disabled
+2026-11-14 09:00:14 EPOCH 014 POST_STEP non_finite_parameters=true
+2026-11-14 09:00:15 EPOCH 015 loss=nan grad_norm=nan
+2026-11-14 09:00:15 ERROR Training stopped: non-finite loss detected
+2026-11-14 09:00:15 NOTE Data batch indices are fixed by seed=42; no input NaN scan has been run yet

@@ -1,0 +1,33 @@
+{
+  "id": "ai-03-validation-mode-mismatch",
+  "title": "训练准确但验证结果随机波动",
+  "domain": "AI/ML",
+  "difficulty": "medium",
+  "input": {
+    "logText": "CONFIG model=ResNet18 dropout=0.5 batch_norm=true optimizer=Adam\nTRAIN epoch=20 loss=0.180 accuracy=0.960\nVALIDATION epoch=20 mode=train dropout_active=true batch_norm_uses_batch_stats=true\nVALIDATION run_1 accuracy=0.510 loss=1.420\nVALIDATION run_2 accuracy=0.540 loss=1.370 same_validation_set=true\nVALIDATION run_3 accuracy=0.490 loss=1.480 same_validation_set=true\nOBSERVE training_curve_stable=true validation_labels_unchanged=true",
+    "domainHint": "AI/ML"
+  },
+  "expected": {
+    "trueCause": "验证阶段未切换 model.eval()，Dropout 和 BatchNorm 仍处于训练模式",
+    "keywords": [
+      "model.eval",
+      "验证模式",
+      "Dropout"
+    ],
+    "minimalControl": {
+      "action": "只在验证前将模型切换为评估模式，训练阶段设置和数据保持不变。",
+      "paramDiff": [
+        {
+          "key": "验证时模型模式",
+          "before": "model.train()",
+          "after": "model.eval()"
+        }
+      ]
+    }
+  },
+  "distractors": [
+    "训练过拟合",
+    "验证集标签错误",
+    "类别不平衡"
+  ]
+}

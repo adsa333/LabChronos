@@ -1,0 +1,143 @@
+{
+  "schemaVersion": 1,
+  "description": "LabChronos 标准评测病例集，输入可直接用于 POST /api/diagnose。",
+  "inputContract": {
+    "logText": "string",
+    "domainHint": "AI/ML | Bio/Chem | Physics/EE",
+    "imageBase64": "optional; these 15 cases intentionally exercise the logText-only path"
+  },
+  "counts": {
+    "total": 15,
+    "AI/ML": 6,
+    "Bio/Chem": 5,
+    "Physics/EE": 4
+  },
+  "evaluationNotes": [
+    "Only case['input'] may be sent to the model; expected and distractors are reference labels.",
+    "Top-1 is judged against expected.trueCause; expected.keywords are auxiliary matching terms.",
+    "Each expected.minimalControl.paramDiff contains exactly one changed variable.",
+    "All cases are synthetic and require domain review before final publication."
+  ],
+  "cases": [
+    {
+      "id": "ai-01-high-learning-rate",
+      "file": "ai-01-high-learning-rate.json",
+      "domain": "AI/ML",
+      "difficulty": "easy",
+      "title": "训练从首轮开始持续振荡",
+      "trueCause": "初始学习率过高且缺少 Warmup"
+    },
+    {
+      "id": "ai-02-nan-input-features",
+      "file": "ai-02-nan-input-features.json",
+      "domain": "AI/ML",
+      "difficulty": "medium",
+      "title": "固定批次触发 Loss NaN",
+      "trueCause": "输入特征中包含 NaN，污染前向计算和梯度"
+    },
+    {
+      "id": "ai-03-validation-mode-mismatch",
+      "file": "ai-03-validation-mode-mismatch.json",
+      "domain": "AI/ML",
+      "difficulty": "medium",
+      "title": "训练准确但验证结果随机波动",
+      "trueCause": "验证阶段未切换 model.eval()，Dropout 和 BatchNorm 仍处于训练模式"
+    },
+    {
+      "id": "ai-04-scheduler-gamma-error",
+      "file": "ai-04-scheduler-gamma-error.json",
+      "domain": "AI/ML",
+      "difficulty": "medium",
+      "title": "学习率调度后 Loss 突然上升",
+      "trueCause": "StepLR 的 gamma 误设为 10，导致学习率逐步放大"
+    },
+    {
+      "id": "ai-05-class-imbalance",
+      "file": "ai-05-class-imbalance.json",
+      "domain": "AI/ML",
+      "difficulty": "medium",
+      "title": "高准确率但少数类几乎无法识别",
+      "trueCause": "类别严重不平衡且损失函数未提高少数类权重"
+    },
+    {
+      "id": "ai-06-log-zero-loss",
+      "file": "ai-06-log-zero-loss.json",
+      "domain": "AI/ML",
+      "difficulty": "hard",
+      "title": "自定义交叉熵突然出现 NaN",
+      "trueCause": "损失函数对零概率直接取 log(0)，缺少数值稳定项"
+    },
+    {
+      "id": "bio-01-pcr-annealing-high",
+      "file": "bio-01-pcr-annealing-high.json",
+      "domain": "Bio/Chem",
+      "difficulty": "medium",
+      "title": "PCR 目标条带完全缺失",
+      "trueCause": "PCR 退火温度高于引物适宜范围，导致特异结合不足"
+    },
+    {
+      "id": "bio-02-pcr-annealing-low",
+      "file": "bio-02-pcr-annealing-low.json",
+      "domain": "Bio/Chem",
+      "difficulty": "medium",
+      "title": "PCR 出现多条非目标条带",
+      "trueCause": "PCR 退火温度过低，引物发生非特异结合"
+    },
+    {
+      "id": "bio-03-gel-overheating",
+      "file": "bio-03-gel-overheating.json",
+      "domain": "Bio/Chem",
+      "difficulty": "easy",
+      "title": "凝胶两侧泳道弯曲呈微笑形",
+      "trueCause": "电泳电压过高导致凝胶边缘发热和迁移不均"
+    },
+    {
+      "id": "bio-04-enzyme-inactive",
+      "file": "bio-04-enzyme-inactive.json",
+      "domain": "Bio/Chem",
+      "difficulty": "medium",
+      "title": "质粒酶切后仍只有未切开条带",
+      "trueCause": "限制性内切酶因不当放置而失活"
+    },
+    {
+      "id": "bio-05-dna-freeze-thaw",
+      "file": "bio-05-dna-freeze-thaw.json",
+      "domain": "Bio/Chem",
+      "difficulty": "easy",
+      "title": "DNA 主带减弱并出现低分子量弥散",
+      "trueCause": "DNA 样品因反复冻融发生降解"
+    },
+    {
+      "id": "phy-01-probe-attenuation-mismatch",
+      "file": "phy-01-probe-attenuation-mismatch.json",
+      "domain": "Physics/EE",
+      "difficulty": "easy",
+      "title": "示波器幅值恰好放大十倍",
+      "trueCause": "探头物理衰减与示波器通道衰减设置不一致"
+    },
+    {
+      "id": "phy-02-sampling-alias",
+      "file": "phy-02-sampling-alias.json",
+      "domain": "Physics/EE",
+      "difficulty": "medium",
+      "title": "高频正弦被显示成低频信号",
+      "trueCause": "采样率低于信号奈奎斯特要求，产生混叠频率"
+    },
+    {
+      "id": "phy-03-missing-decoupling",
+      "file": "phy-03-missing-decoupling.json",
+      "domain": "Physics/EE",
+      "difficulty": "hard",
+      "title": "数字电源轨在负载切换时出现纹波",
+      "trueCause": "芯片电源脚附近缺少高频去耦电容，负载切换引起电源纹波"
+    },
+    {
+      "id": "phy-04-missing-termination",
+      "file": "phy-04-missing-termination.json",
+      "domain": "Physics/EE",
+      "difficulty": "hard",
+      "title": "高速方波在传输线末端出现过冲和反射",
+      "trueCause": "传输线末端缺少 50 Ω 匹配端接，产生阻抗反射"
+    }
+  ]
+}

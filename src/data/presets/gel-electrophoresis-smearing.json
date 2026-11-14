@@ -1,0 +1,166 @@
+{
+  "caseTitle": "凝胶电泳 DNA 条带彗星状拖尾",
+  "domain": "Bio/Chem",
+  "observedSymptoms": [
+    {
+      "id": "s1",
+      "label": "多条泳道出现明亮主带并伴随彗星状拖尾",
+      "detail": "拖尾从主带区域向泳道后方延伸，不同泳道的拖尾程度不一致。",
+      "severity": "critical",
+      "source": "image",
+      "bbox": [0.5176, 0.3425, 0.2461, 0.4275]
+    },
+    {
+      "id": "s2",
+      "label": "高上样量泳道更亮、更宽，拖尾更明显",
+      "detail": "500 ng 泳道比同一块凝胶上的 100 ng 对照泳道更弥散，主带仍清晰可辨。",
+      "severity": "warning",
+      "source": "image",
+      "bbox": [0.5352, 0.3515, 0.0703, 0.4095]
+    },
+    {
+      "id": "s3",
+      "label": "常规泳道上样量为 500 ng DNA",
+      "detail": "条件表记录常规泳道每孔 500 ng，100 ng 对照孔使用相同样品、缓冲液和电泳条件。",
+      "severity": "warning",
+      "source": "log"
+    },
+    {
+      "id": "s4",
+      "label": "电泳条件为 1×TAE、100 V、35 min",
+      "detail": "使用 0.8% 琼脂糖凝胶，各泳道共用同一批 1×TAE 缓冲液。",
+      "severity": "warning",
+      "source": "log"
+    }
+  ],
+  "hypotheses": [
+    {
+      "id": "h1",
+      "title": "DNA 上样量过大导致过载",
+      "mechanism": "过量 DNA 超过凝胶局部分离和染色容量，使条带变宽，并产生与上样量相关的拖尾。",
+      "priorScore": 40,
+      "evidenceFor": ["s1", "s2", "s3"],
+      "subCauses": [
+        "局部 DNA 浓度过高使条带展宽",
+        "过量样品加剧泳道内迁移和染色不均匀"
+      ],
+      "minimalControl": {
+        "action": "只将每孔 DNA 上样量从 500 ng 降为 100 ng，相同样品、凝胶浓度、电压、时间和缓冲液均不变。",
+        "paramDiff": [
+          {
+            "key": "每孔 DNA 上样量",
+            "before": "500 ng",
+            "after": "100 ng"
+          }
+        ],
+        "expectedOutcome": "若为过载，100 ng 泳道的主带应变窄、拖尾显著减轻，且迁移位置不发生异常改变。"
+      }
+    },
+    {
+      "id": "h2",
+      "title": "电压过高导致发热和迁移不均",
+      "mechanism": "较高电压产生更多焦耳热，可能使凝胶温度和离子分布不均，从而造成条带变形。",
+      "priorScore": 25,
+      "evidenceFor": ["s1", "s4"],
+      "subCauses": [
+        "焦耳热使凝胶局部温度升高",
+        "温度与离子分布不均使条带迁移不一致"
+      ],
+      "minimalControl": {
+        "action": "只将电泳电压从 100 V 降为 70 V，保持 500 ng 上样量、凝胶、缓冲液和电泳时间不变。",
+        "paramDiff": [
+          {
+            "key": "电泳电压",
+            "before": "100 V",
+            "after": "70 V"
+          }
+        ],
+        "expectedOutcome": "若电压发热是主因，在仍保持 500 ng 上样量时，70 V 条件下的拖尾应减轻，泳道间差异应缩小。"
+      }
+    },
+    {
+      "id": "h3",
+      "title": "DNA 样品降解",
+      "mechanism": "核酸酶污染或不当保存会使 DNA 断裂，不同长度的片段可能形成连续的低分子量弥散背景。",
+      "priorScore": 20,
+      "evidenceFor": ["s1"],
+      "subCauses": [
+        "核酸酶污染或反复冻融造成 DNA 断裂",
+        "不同长度片段形成主带减弱的连续 smear"
+      ],
+      "minimalControl": {
+        "action": "只将原样品换成同批次、未反复冻融的 DNA 等分试样，仍按 500 ng 上样，其他条件不变。",
+        "paramDiff": [
+          {
+            "key": "DNA 样品状态",
+            "before": "原样品",
+            "after": "同批次未反复冻融等分样品"
+          }
+        ],
+        "expectedOutcome": "若降解是主因，更换样品后连续 smear 应明显减少；若仅降低上样量就改善，则更支持过载。"
+      }
+    },
+    {
+      "id": "h4",
+      "title": "缓冲液反复使用导致离子强度异常",
+      "mechanism": "旧缓冲液的离子耗竭和 pH 变化可能使电场不稳定，增加泳道间的迁移差异。",
+      "priorScore": 15,
+      "evidenceFor": ["s1", "s4"],
+      "subCauses": [
+        "离子耗竭使电场和 pH 不稳定",
+        "旧缓冲液增加泳道间的迁移差异"
+      ],
+      "minimalControl": {
+        "action": "只将原缓冲液更换为同配方新配 1×TAE，保持 500 ng 上样量、100 V 电压和其他条件不变。",
+        "paramDiff": [
+          {
+            "key": "TAE 缓冲液状态",
+            "before": "原缓冲液",
+            "after": "同配方新配 1×TAE"
+          }
+        ],
+        "expectedOutcome": "若缓冲液是主因，更换新缓冲液后，在相同上样量下拖尾和泳道间差异应明显减轻。"
+      }
+    }
+  ],
+  "questions": [
+    {
+      "id": "q1",
+      "prompt": "拖尾是否随上样量增加而加重，并在 100 ng 对照孔中明显减轻？",
+      "howToCheck": "比较同一块凝胶上的 100 ng 与 500 ng 泳道，确保样品、染料、电压和缓冲液相同，只比较上样量这一变量。",
+      "options": [
+        {
+          "label": "是，上样量越高拖尾越明显",
+          "scoreDelta": { "h1": 20, "h2": -5, "h3": -5, "h4": -5 }
+        },
+        {
+          "label": "否，不同上样量的拖尾程度基本一致",
+          "scoreDelta": { "h1": -30, "h2": 10, "h3": 15, "h4": 10 }
+        },
+        {
+          "label": "不确定",
+          "scoreDelta": { "h1": 0, "h2": 0, "h3": 0, "h4": 0 }
+        }
+      ]
+    },
+    {
+      "id": "q2",
+      "prompt": "主带是否仍然清晰可辨，而不是整个泳道向低分子量区域连续弥散？",
+      "howToCheck": "观察主带位置和拖尾形态：过载通常仍有较强主带；降解更常表现为主带减弱，并由不同长度片段形成连续 smear。",
+      "options": [
+        {
+          "label": "是，主带完整，主要表现为局部拖尾",
+          "scoreDelta": { "h1": 10, "h2": 5, "h3": -30, "h4": 0 }
+        },
+        {
+          "label": "否，主带消失并出现广泛连续 smear",
+          "scoreDelta": { "h1": -20, "h2": 0, "h3": 30, "h4": 5 }
+        },
+        {
+          "label": "不确定",
+          "scoreDelta": { "h1": 0, "h2": 0, "h3": 0, "h4": 0 }
+        }
+      ]
+    }
+  ]
+}

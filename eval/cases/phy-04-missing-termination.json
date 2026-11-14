@@ -1,0 +1,33 @@
+{
+  "id": "phy-04-missing-termination",
+  "title": "高速方波在传输线末端出现过冲和反射",
+  "domain": "Physics/EE",
+  "difficulty": "hard",
+  "input": {
+    "logText": "INPUT square_wave frequency=50MHz source_impedance=50ohm rise_time=1ns\nINTERCONNECT coax_length=1m characteristic_impedance=50ohm\nSCOPE input_impedance=1Mohm sample_rate=1GSa_s probe_ground=spring_short\nRESULT overshoot=45% delayed_reflection=visible damped_ringing=false\nCONTROL short_ground_change=no_significant_effect adc_overrange=false\nOBSERVE reflection_delay_matches_round_trip_coax_delay=true",
+    "domainHint": "Physics/EE"
+  },
+  "expected": {
+    "trueCause": "传输线末端缺少 50 Ω 匹配端接，产生阻抗反射",
+    "keywords": [
+      "阻抗匹配",
+      "端接",
+      "反射"
+    ],
+    "minimalControl": {
+      "action": "只将示波器输入端接改为与传输线特性阻抗一致，探头接地和信号源不变。",
+      "paramDiff": [
+        {
+          "key": "示波器输入阻抗",
+          "before": "1 MΩ",
+          "after": "50 Ω"
+        }
+      ]
+    }
+  },
+  "distractors": [
+    "探头接地线过长",
+    "采样率不足",
+    "输入超量程"
+  ]
+}

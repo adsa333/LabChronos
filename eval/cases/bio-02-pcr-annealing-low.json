@@ -1,0 +1,32 @@
+{
+  "id": "bio-02-pcr-annealing-low",
+  "title": "PCR 出现多条非目标条带",
+  "domain": "Bio/Chem",
+  "difficulty": "medium",
+  "input": {
+    "logText": "PCR target_size=800bp primer_tm=60-62C annealing_temp=50C cycles=35\nREAGENT polymerase=fresh buffer=correct mgcl2=standard\nRESULT bands=200bp,450bp,800bp,1500bp target_band_present=true\nRESULT negative_control=no_band template_integrity=passed\nOBSERVE nonspecific_bands_stronger_after_more_cycles=true",
+    "domainHint": "Bio/Chem"
+  },
+  "expected": {
+    "trueCause": "PCR 退火温度过低，引物发生非特异结合",
+    "keywords": [
+      "退火温度",
+      "非特异"
+    ],
+    "minimalControl": {
+      "action": "只提高退火温度，保持引物、模板、酶、缓冲液和循环数不变。",
+      "paramDiff": [
+        {
+          "key": "退火温度",
+          "before": "50°C",
+          "after": "60°C"
+        }
+      ]
+    }
+  },
+  "distractors": [
+    "样品污染",
+    "DNA 模板降解",
+    "聚合酶失活"
+  ]
+}

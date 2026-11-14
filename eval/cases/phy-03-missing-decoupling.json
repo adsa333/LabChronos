@@ -1,0 +1,32 @@
+{
+  "id": "phy-03-missing-decoupling",
+  "title": "数字电源轨在负载切换时出现纹波",
+  "domain": "Physics/EE",
+  "difficulty": "hard",
+  "input": {
+    "logText": "RAIL nominal=3.3V load=relay_and_microcontroller\nMEASURE probe_ground=spring_short bandwidth_limit=20MHz sample_rate=500MSa_s\nRESULT relay_idle_rail=3.30V noise=8mVpp\nRESULT relay_switching_rail_noise=100mVpp dominant_frequency=100kHz\nPCB decoupling_near_mcu_power_pin=absent bulk_capacitor_at_power_input=10uF\nOBSERVE noise_follows_load_switching=true",
+    "domainHint": "Physics/EE"
+  },
+  "expected": {
+    "trueCause": "芯片电源脚附近缺少高频去耦电容，负载切换引起电源纹波",
+    "keywords": [
+      "去耦电容",
+      "电源纹波"
+    ],
+    "minimalControl": {
+      "action": "只在芯片电源脚附近增加高频去耦电容，供电、负载和测量方式不变。",
+      "paramDiff": [
+        {
+          "key": "芯片近端去耦",
+          "before": "无电容",
+          "after": "增加 0.1 µF 陶瓷电容"
+        }
+      ]
+    }
+  },
+  "distractors": [
+    "示波器采样率不足",
+    "探头接地线过长",
+    "输入量程过小"
+  ]
+}

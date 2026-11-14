@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900">
+  <defs>
+    <style>
+      .title { font: 700 30px Arial, sans-serif; fill: #edf7f5; }
+      .subtitle { font: 18px Consolas, monospace; fill: #8ca3ad; }
+      .label { font: 16px Consolas, monospace; fill: #8ca3ad; }
+      .annotation { font: 700 18px Consolas, monospace; fill: #f2b35f; }
+    </style>
+    <pattern id="minorGrid" width="25" height="25" patternUnits="userSpaceOnUse">
+      <path d="M25 0H0V25" fill="none" stroke="#18322d" stroke-width="1"/>
+    </pattern>
+    <pattern id="majorGrid" width="100" height="100" patternUnits="userSpaceOnUse">
+      <rect width="100" height="100" fill="url(#minorGrid)"/>
+      <path d="M100 0H0V100" fill="none" stroke="#2d5147" stroke-width="1.5"/>
+    </pattern>
+    <filter id="glow"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="5" refY="5" orient="auto"><path d="M0 0L10 5L0 10Z" fill="#f2b35f"/></marker>
+  </defs>
+  <rect width="1400" height="900" fill="#080d13"/>
+  <text x="70" y="58" class="title">Oscilloscope evidence — edge-triggered damped ringing</text>
+  <text x="70" y="88" class="subtitle">CH1 · 1 MHz square wave · 500 MSa/s · 10× passive probe · 10 cm ground lead</text>
+  <text x="1330" y="58" text-anchor="end" class="subtitle">SYNTHETIC TRACE</text>
+
+  <rect x="65" y="115" width="1270" height="665" rx="14" fill="#07130f" stroke="#36594f" stroke-width="3"/>
+  <rect x="85" y="135" width="1230" height="625" fill="url(#majorGrid)"/>
+  <line x1="85" y1="447" x2="1315" y2="447" stroke="#4a6f64" stroke-width="2" stroke-dasharray="8 8" opacity="0.6"/>
+
+  <path d="M110 560 L240 560 L250 176 L258 360 L266 240 L274 335 L282 267 L290 322 L298 282 L306 313 L314 291 L322 306 L330 298 L338 302 L346 300 L540 300 L550 668 L558 502 L566 616 L574 525 L582 592 L590 540 L598 578 L606 550 L614 568 L622 556 L630 560 L840 560 L850 176 L858 360 L866 240 L874 335 L882 267 L890 322 L898 282 L906 313 L914 291 L922 306 L930 298 L938 302 L946 300 L1140 300 L1150 668 L1158 502 L1166 616 L1174 525 L1182 592 L1190 540 L1198 578 L1206 550 L1214 568 L1222 556 L1230 560 L1300 560" fill="none" stroke="#70f0a8" stroke-width="4" stroke-linejoin="round" stroke-linecap="round" filter="url(#glow)"/>
+
+  <path d="M410 205 C380 170 330 165 275 185" fill="none" stroke="#f2b35f" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="420" y="205" class="annotation">Overshoot + damped ringing</text>
+  <text x="420" y="235" class="label">only after the fast edge</text>
+  <path d="M700 365 C650 335 520 320 365 305" fill="none" stroke="#8ca3ad" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="710" y="370" class="label">flat high level: no continuous ripple</text>
+  <text x="710" y="400" class="label">no flat-top clipping / no ADC overrange</text>
+
+  <g class="label">
+    <text x="100" y="160">+2 V</text><text x="100" y="745">−2 V</text>
+    <text x="1300" y="160" text-anchor="end">500 MSa/s</text>
+    <text x="1300" y="745" text-anchor="end">1 MHz input</text>
+  </g>
+  <rect x="65" y="810" width="1270" height="55" rx="9" fill="#111c24" stroke="#293843"/>
+  <text x="90" y="845" class="subtitle">Probe ground: 10 cm clip lead to a remote ground point · stable levels remain flat between transitions</text>
+</svg>

@@ -1,0 +1,32 @@
+{
+  "id": "ai-05-class-imbalance",
+  "title": "高准确率但少数类几乎无法识别",
+  "domain": "AI/ML",
+  "difficulty": "medium",
+  "input": {
+    "logText": "DATA train_negative=99000 train_positive=1000 validation_negative=10000 validation_positive=100\nCONFIG loss=BCEWithLogitsLoss pos_weight=none threshold=0.5\nMETRIC accuracy=0.9900 negative_recall=0.9990 positive_recall=0.0200\nMETRIC positive_precision=0.4000 confusion_tp=2 confusion_fn=98\nOBSERVE majority_class_accuracy_high=true training_loss_decreases=true",
+    "domainHint": "AI/ML"
+  },
+  "expected": {
+    "trueCause": "类别严重不平衡且损失函数未提高少数类权重",
+    "keywords": [
+      "类别不平衡",
+      "少数类权重"
+    ],
+    "minimalControl": {
+      "action": "只为正类设置与样本比例对应的损失权重，数据、阈值和模型结构不变。",
+      "paramDiff": [
+        {
+          "key": "BCE pos_weight",
+          "before": "无（正负类等权）",
+          "after": "99"
+        }
+      ]
+    }
+  },
+  "distractors": [
+    "学习率过高",
+    "验证阶段未调用 eval",
+    "输入数据含 NaN"
+  ]
+}

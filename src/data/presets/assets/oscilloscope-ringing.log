@@ -1,0 +1,10 @@
+2026-11-14 11:00:00 INPUT waveform=square frequency=1MHz amplitude=4Vpp source=same_for_all_checks
+2026-11-14 11:00:01 CHANNEL name=CH1 probe=10x_passive vertical_scale=1V_div input_range=plus_minus_2V
+2026-11-14 11:00:02 ACQUISITION sample_rate=500MSa_s bandwidth_limit=off timebase=250ns_div
+2026-11-14 11:00:03 PROBE_GROUND style=clip_lead length=10cm connection=remote_ground_point
+2026-11-14 11:00:04 STATUS adc_overrange=false flat_top_clipping=false
+2026-11-14 11:00:05 OBSERVE rising_edge=overshoot_plus_damped_ringing
+2026-11-14 11:00:06 OBSERVE falling_edge=undershoot_plus_damped_ringing
+2026-11-14 11:00:07 OBSERVE high_level=flat low_level=flat continuous_ripple=false
+2026-11-14 11:00:08 SUMMARY ringing_follows_fast_edges=true stable_level_oscillation=false
+2026-11-14 11:00:09 NOTE Ground spring A/B comparison has not been run yet
