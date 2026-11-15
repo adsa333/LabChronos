@@ -1,7 +1,7 @@
-import { useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { motion } from 'framer-motion'
 import ReactFlow, { Background, Controls, Handle, Position } from 'reactflow'
-import type { Edge, Node, NodeProps } from 'reactflow'
+import type { Edge, Node, NodeProps, ReactFlowInstance } from 'reactflow'
 import 'reactflow/dist/style.css'
 import type { DiagnosisResult } from '../types/diagnosis'
 import type { HypothesisScore } from '../lib/scoring'
@@ -64,6 +64,26 @@ function CauseNode({ data }: NodeProps<TreeNodeData>) {
 const nodeTypes = { cause: CauseNode }
 
 export default function CausalTree({ diagnosis, scores, prunedIds, lockedId }: CausalTreeProps) {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const flowRef = useRef<ReactFlowInstance | null>(null)
+
+  useEffect(() => {
+    const container = containerRef.current
+    if (!container) return
+    let timer: number | undefined
+    const observer = new ResizeObserver(() => {
+      window.clearTimeout(timer)
+      timer = window.setTimeout(() => {
+        flowRef.current?.fitView({ padding: 0.04, maxZoom: 1.15, minZoom: 0.7 })
+      }, 120)
+    })
+    observer.observe(container)
+    return () => {
+      window.clearTimeout(timer)
+      observer.disconnect()
+    }
+  }, [])
+
   const { nodes, edges } = useMemo(() => {
     const scoreMap = new Map(scores.map((score) => [score.id, score]))
     const rootY = (diagnosis.hypotheses.length - 1) * 90 + 25
@@ -127,12 +147,13 @@ export default function CausalTree({ diagnosis, scores, prunedIds, lockedId }: C
   }, [diagnosis, scores, prunedIds, lockedId])
 
   return (
-    <div className="h-full min-h-[430px] overflow-hidden rounded-md border border-line bg-bg/60">
+    <div ref={containerRef} className="h-full min-h-[430px] overflow-hidden rounded-md border border-line bg-bg/60">
       <ReactFlow
         nodes={nodes}
         edges={edges}
         nodeTypes={nodeTypes}
         fitView
+        onInit={(instance) => { flowRef.current = instance }}
         fitViewOptions={{ padding: 0.04, maxZoom: 1.15 }}
         minZoom={0.7}
         maxZoom={1.5}

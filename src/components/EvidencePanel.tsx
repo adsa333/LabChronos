@@ -27,29 +27,33 @@ export default function EvidencePanel({ preset }: EvidencePanelProps) {
             <span className="font-mono text-[9px] tracking-wider text-pruned">SYNTHETIC EVIDENCE</span>
           </div>
           <div className="flex justify-center bg-black/25 p-2">
-            <div className="relative inline-block">
-              <img
-                src={preset.image}
-                alt={preset.diagnosis.caseTitle}
-                className="block max-h-[280px] w-auto max-w-full rounded"
-              />
-              {activeBBox && (
-                <div
-                  className="pointer-events-none absolute rounded-sm border-2 border-suspect bg-suspect/10 transition-opacity duration-150"
-                  style={{
-                    left: `${activeBBox[0] * 100}%`,
-                    top: `${activeBBox[1] * 100}%`,
-                    width: `${activeBBox[2] * 100}%`,
-                    height: `${activeBBox[3] * 100}%`,
-                  }}
-                >
-                  <span className="absolute -left-0.5 -top-0.5 h-3 w-3 border-l-2 border-t-2 border-suspect" />
-                  <span className="absolute -right-0.5 -top-0.5 h-3 w-3 border-r-2 border-t-2 border-suspect" />
-                  <span className="absolute -bottom-0.5 -left-0.5 h-3 w-3 border-b-2 border-l-2 border-suspect" />
-                  <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 border-b-2 border-r-2 border-suspect" />
-                </div>
-              )}
-            </div>
+            {preset.image ? (
+              <div className="relative inline-block">
+                <img
+                  src={preset.image}
+                  alt={preset.diagnosis.caseTitle}
+                  className="block max-h-[280px] w-auto max-w-full rounded"
+                />
+                {activeBBox && (
+                  <div
+                    className="pointer-events-none absolute rounded-sm border-2 border-suspect bg-suspect/10 transition-opacity duration-150"
+                    style={{
+                      left: `${activeBBox[0] * 100}%`,
+                      top: `${activeBBox[1] * 100}%`,
+                      width: `${activeBBox[2] * 100}%`,
+                      height: `${activeBBox[3] * 100}%`,
+                    }}
+                  >
+                    <span className="absolute -left-0.5 -top-0.5 h-3 w-3 border-l-2 border-t-2 border-suspect" />
+                    <span className="absolute -right-0.5 -top-0.5 h-3 w-3 border-r-2 border-t-2 border-suspect" />
+                    <span className="absolute -bottom-0.5 -left-0.5 h-3 w-3 border-b-2 border-l-2 border-suspect" />
+                    <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 border-b-2 border-r-2 border-suspect" />
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="px-4 py-16 text-xs text-pruned">未提供实验截图</div>
+            )}
           </div>
         </div>
 
@@ -74,8 +78,12 @@ export default function EvidencePanel({ preset }: EvidencePanelProps) {
             <span className="font-mono text-[9px] text-pruned">{activeTab === 'log' ? 'LOG' : 'CSV'}</span>
           </div>
           {activeTab === 'log' ? (
-            <pre className="min-h-0 flex-1 overflow-auto p-3 font-mono text-[9px] leading-[1.65] text-ink-muted">{preset.log}</pre>
-          ) : (
+            preset.log.trim() ? (
+              <pre className="min-h-0 flex-1 overflow-auto p-3 font-mono text-[9px] leading-[1.65] text-ink-muted">{preset.log}</pre>
+            ) : (
+              <div className="flex min-h-0 flex-1 items-center justify-center text-xs text-pruned">未提供实验日志</div>
+            )
+          ) : preset.conditions.trim() ? (
             <div className="min-h-0 flex-1 overflow-auto">
               <table className="w-full border-collapse text-[10px]">
                 <thead className="sticky top-0 bg-bg text-ink-muted">
@@ -94,6 +102,8 @@ export default function EvidencePanel({ preset }: EvidencePanelProps) {
                 </tbody>
               </table>
             </div>
+          ) : (
+            <div className="flex min-h-0 flex-1 items-center justify-center text-xs text-pruned">该病例未提供条件表</div>
           )}
         </div>
 
