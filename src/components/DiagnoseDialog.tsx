@@ -266,11 +266,14 @@ export default function DiagnoseDialog({ open, onClose, onSuccess }: DiagnoseDia
                   })}
                 </div>
 
-                {activeStage === 2 && elapsed > 15 && (
-                  <p className="mt-6 text-center text-[10px] text-ink-muted">模型仍在分析，通常需要 10–20 秒</p>
+                {activeStage === 2 && elapsed > 12 && (
+                  <p className="mt-6 text-center text-[10px] text-ink-muted">模型仍在分析，通常需要 30 秒左右</p>
+                )}
+                {activeStage === 2 && elapsed > 45 && (
+                  <p className="mt-2 text-center text-[10px] text-ink-muted">网络可能较慢，可以继续等待或取消</p>
                 )}
                 <div className="mt-6 flex items-center justify-end gap-3 border-t border-line pt-5">
-                  {activeStage === 2 && elapsed > 30 && (
+                  {activeStage === 2 && elapsed > 60 && (
                     <button type="button" onClick={cancelDiagnosis} className="rounded-md border border-suspect/50 bg-suspect/10 px-4 py-2 text-xs text-suspect hover:bg-suspect/15">
                       取消
                     </button>
