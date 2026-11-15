@@ -358,8 +358,8 @@ function validateDiagnosis(value) {
           }
         } else {
           const deltas = Object.values(option.scoreDelta);
-          if (!deltas.some((delta) => delta >= 15) || !deltas.some((delta) => delta <= -10)) {
-            add(`questions.${questionIndex}.options.${optionIndex}`, "实质性选项必须包含 >=+15 与 <=-10 的互斥区分");
+          if (!deltas.some((delta) => delta > 0) || !deltas.some((delta) => delta < 0)) {
+            add(`questions.${questionIndex}.options.${optionIndex}`, "实质性选项必须包含 >0 与 <0 的正负加减分");
           }
         }
       });
