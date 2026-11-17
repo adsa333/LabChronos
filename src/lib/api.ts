@@ -125,7 +125,7 @@ function blobToBase64(blob: Blob): Promise<string> {
   });
 }
 
-async function compressImage(file: File): Promise<string> {
+export async function compressImage(file: File): Promise<string> {
   if (!file.type.startsWith("image/") || file.size === 0) throw new Error("请选择有效的图片文件。");
 
   let bitmap: ImageBitmap;

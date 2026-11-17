@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Archive, FlaskConical, Plus, X } from 'lucide-react'
 import CausalTree from '../components/CausalTree'
 import DiagnoseDialog from '../components/DiagnoseDialog'
@@ -7,6 +7,7 @@ import PanelHeader from '../components/PanelHeader'
 import TriagePanel from '../components/TriagePanel'
 import { presets } from '../data/presets'
 import type { PresetCase } from '../data/presets'
+import { deleteCustomCase, loadCustomCase, saveCustomCase } from '../lib/caseStorage'
 import { getAutomaticLockId, getLeadingHypothesis, getPrunedIds, scoreHypotheses } from '../lib/scoring'
 import type { Answers } from '../lib/scoring'
 import type { DiagnosisResult } from '../types/diagnosis'
@@ -17,6 +18,11 @@ export default function Workbench() {
   const [manualLockId, setManualLockId] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [customCase, setCustomCase] = useState<PresetCase | null>(null)
+  const [customCaseLoad] = useState(loadCustomCase)
+  const customCreatedAtRef = useRef(0)
+  const customHasImageRef = useRef(false)
+  const customCaseTouchedRef = useRef(false)
+  const answersSaveTimerRef = useRef<number | undefined>(undefined)
   const activeCase = customCase?.id === activeCaseId ? customCase : presets.find((preset) => preset.id === activeCaseId) ?? presets[0]
   const { diagnosis } = activeCase
   const scores = useMemo(() => scoreHypotheses(diagnosis, answers), [diagnosis, answers])
@@ -30,6 +36,52 @@ export default function Workbench() {
     }
   }, [customCase])
 
+  useEffect(() => {
+    let active = true
+    void customCaseLoad.then((stored) => {
+      if (!active || !stored || customCaseTouchedRef.current) return
+      const { caseData, imageBlob } = stored
+      customCreatedAtRef.current = caseData.createdAt
+      customHasImageRef.current = caseData.hasImage
+      setCustomCase({
+        id: caseData.id,
+        label: '自定义诊断',
+        diagnosis: caseData.diagnosis,
+        image: imageBlob ? URL.createObjectURL(imageBlob) : '',
+        log: caseData.log,
+        conditions: caseData.conditions,
+      })
+      setActiveCaseId(caseData.id)
+      setAnswers(caseData.answers)
+      setManualLockId(null)
+    }).catch(() => {})
+    return () => {
+      active = false
+    }
+  }, [customCaseLoad])
+
+  useEffect(() => {
+    return () => {
+      window.clearTimeout(answersSaveTimerRef.current)
+    }
+  }, [])
+
+  function scheduleAnswersSave(nextAnswers: Answers) {
+    if (!customCase) return
+    window.clearTimeout(answersSaveTimerRef.current)
+    answersSaveTimerRef.current = window.setTimeout(() => {
+      void saveCustomCase({
+        id: customCase.id,
+        diagnosis: customCase.diagnosis,
+        log: customCase.log,
+        conditions: customCase.conditions,
+        answers: nextAnswers,
+        createdAt: customCreatedAtRef.current,
+        hasImage: customHasImageRef.current,
+      })
+    }, 300)
+  }
+
   function selectCase(caseId: string) {
     setActiveCaseId(caseId)
     setAnswers({})
@@ -37,19 +89,30 @@ export default function Workbench() {
   }
 
   function answerQuestion(questionId: string, optionIndex: number) {
-    setAnswers((current) => ({ ...current, [questionId]: optionIndex }))
+    const nextAnswers = { ...answers, [questionId]: optionIndex }
+    setAnswers(nextAnswers)
+    if (customCase) scheduleAnswersSave(nextAnswers)
     setManualLockId(null)
   }
 
   function resetAnswers() {
     setAnswers({})
+    if (customCase) scheduleAnswersSave({})
     setManualLockId(null)
   }
 
   function handleDiagnoseSuccess(diagnosis: DiagnosisResult, imageFile?: File, logText?: string) {
-    const id = `custom-${Date.now()}`
+    window.clearTimeout(answersSaveTimerRef.current)
+    customCaseTouchedRef.current = true
+    const createdAt = Date.now()
+    const id = `custom-${createdAt}`
+    const hasImage = Boolean(imageFile)
+    const log = logText ?? ''
     const image = imageFile ? URL.createObjectURL(imageFile) : ''
-    setCustomCase({ id, label: '自定义诊断', diagnosis, image, log: logText ?? '', conditions: '' })
+    customCreatedAtRef.current = createdAt
+    customHasImageRef.current = hasImage
+    void saveCustomCase({ id, diagnosis, log, conditions: '', answers: {}, createdAt, hasImage }, imageFile)
+    setCustomCase({ id, label: '自定义诊断', diagnosis, image, log, conditions: '' })
     setActiveCaseId(id)
     setAnswers({})
     setManualLockId(null)
@@ -57,6 +120,12 @@ export default function Workbench() {
   }
 
   function removeCustomCase() {
+    customCaseTouchedRef.current = true
+    if (customCase) {
+      window.clearTimeout(answersSaveTimerRef.current)
+      void deleteCustomCase(customCase.id)
+      if (customCase.image.startsWith('blob:')) URL.revokeObjectURL(customCase.image)
+    }
     setCustomCase(null)
     selectCase(presets[0].id)
   }
