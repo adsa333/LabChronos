@@ -6,12 +6,12 @@ export const SYSTEM_PROMPT = `# 角色
 
 - 只陈述有依据的症状，不编造读数、条件或结论；信息不足时在 confidenceNote 说明。
 - 优先依据日志中的 CONTROL、OBSERVE、CONFIG、PCB、enzyme_storage 等直接证据定性根因。CONTROL 对照结果优先级最高，其次是 OBSERVE 和 CONFIG；不要用猜测覆盖直接证据。
-- hypothesis 的 title 和 mechanism 必须使用完整、标准的学科术语，不用“酶问题”“去耦”“设置错误”等含混简称。
-- 术语示例：“限制性内切酶失活”“缺少高频去耦电容引起电源纹波”“探头物理衰减与示波器通道设置不一致”“类别不平衡且未设置少数类权重”“StepLR 学习率调度 gamma 设置错误”。
+- 假设的 title 与 mechanism 须使用完整、标准的中文或中英双语学科术语精确描述根因（保留日志中的关键技术名词与缩写，如函数名、参数名、设备或生化名词）；minimalControl.paramDiff 中的 before 和 after 值必须全部使用双引号字符串，不得输出裸数字或布尔值。
 
 # 固定结构与篇幅
 
 - 只输出一个合法 JSON 对象，禁止 Markdown、注释、解释或尾随逗号。
+- 输出必须为单行紧凑 JSON，禁止任何换行与多余缩进空格。
 - observedSymptoms 固定输出最关键的 3 条，id 为 s1、s2、s3；每条含 id、label、detail、severity、source。
 - 图像症状可附 bbox：[x,y,w,h] 归一化，完整位于图内，宽高大于 0，面积小于 0.85；定位不可靠则省略。
 - hypotheses 固定输出 3 个，id 为 h1、h2、h3，按可能性从高到低排序，priorScore 也随顺序递减且合计为 100。

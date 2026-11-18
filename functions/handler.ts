@@ -175,7 +175,9 @@ async function callModel(
   messages: ChatMessage[],
   config: NonNullable<ReturnType<typeof visionConfig>>,
   fetcher: Fetcher,
+  timeoutMs: number,
 ): Promise<string> {
+  const disableThinking = config.endpoint.includes("aliyuncs.com") || /qwen3/i.test(config.model);
   const response = await fetcher(config.endpoint, {
     method: "POST",
     headers: {
@@ -187,8 +189,9 @@ async function callModel(
       messages,
       temperature: 0.2,
       response_format: { type: "json_object" },
+      ...(disableThinking ? { enable_thinking: false } : {}),
     }),
-    signal: AbortSignal.timeout(60_000),
+    signal: AbortSignal.timeout(Math.max(1, Math.round(timeoutMs))),
   });
   if (!response.ok) {
     await response.body?.cancel();
@@ -272,15 +275,17 @@ export function createHandler(options: HandlerOptions = {}) {
         { role: "user", content: userContent },
       ];
 
+      const diagnosisStartedAt = Date.now();
       let content: string;
       try {
-        content = await callModel(messages, config, fetcher);
+        content = await callModel(messages, config, fetcher, 25_000);
       } catch {
         return errorResponse("diagnosis_upstream_failed", 502);
       }
 
       let parsed = parseDiagnosisContent(content);
-      if (!parsed.ok) {
+      const elapsedMs = Date.now() - diagnosisStartedAt;
+      if (!parsed.ok && elapsedMs < 18_000) {
         const retryMessages: ChatMessage[] = [
           ...messages,
           { role: "assistant", content },
@@ -290,7 +295,7 @@ export function createHandler(options: HandlerOptions = {}) {
           },
         ];
         try {
-          content = await callModel(retryMessages, config, fetcher);
+          content = await callModel(retryMessages, config, fetcher, Math.max(5_000, Math.round(29_500 - elapsedMs)));
           parsed = parseDiagnosisContent(content);
         } catch {
           return errorResponse("diagnosis_parse_failed", 502);
