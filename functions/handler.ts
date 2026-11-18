@@ -234,7 +234,12 @@ export function createHandler(options: HandlerOptions = {}) {
       if (path === "/api/health") {
         if (request.method !== "GET") return errorResponse("method_not_allowed", 405, { allow: "GET" });
         const configured = ["VISION_API_KEY", "VISION_BASE_URL", "VISION_MODEL"].every((name) => Boolean(env(name)?.trim()));
-        return Response.json({ ok: true, configured }, { headers: { "cache-control": "no-store" } });
+        return Response.json({
+          ok: true,
+          configured,
+          model: configured ? env("VISION_MODEL")?.trim() ?? null : null,
+          timeoutBudgetMs: 30_000,
+        }, { headers: { "cache-control": "no-store" } });
       }
 
       if (path === "/api/vault-test") {
@@ -303,7 +308,9 @@ export function createHandler(options: HandlerOptions = {}) {
       }
 
       if (!parsed.ok) return errorResponse("diagnosis_parse_failed", 502);
-      return Response.json(parsed.data, { headers: { "cache-control": "no-store" } });
+      return Response.json(parsed.data, {
+        headers: { "cache-control": "no-store", "x-diagnosis-model": config.model },
+      });
     } catch (error) {
       if (error instanceof RequestError) return errorResponse(error.code, error.status);
       return errorResponse("internal_error", 500);

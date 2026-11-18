@@ -12,6 +12,7 @@ import {
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const REPORT_PATH = resolve(ROOT, "eval/report.json");
+const SCORE_DELTA_REPAIRS = new Set(["scoreDelta_keys_completed", "scoreDelta_clamped", "uncertain_option_normalized"]);
 const missing = ["VISION_API_KEY", "VISION_BASE_URL", "VISION_MODEL"].filter((name) => !process.env[name]?.trim());
 
 if (missing.length > 0) {
@@ -337,6 +338,7 @@ async function runCase(testCase, systemPrompt) {
     return result;
   } finally {
     result.durationMs = elapsed(started);
+    result.scoreDeltaModified = result.repairsApplied.some((name) => SCORE_DELTA_REPAIRS.has(name));
   }
 }
 

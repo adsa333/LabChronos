@@ -171,7 +171,10 @@ Deno.test("health checks configuration without exposing secrets", async () => {
   const body = await response.json();
   assertEquals(body.ok, true);
   assertEquals(body.configured, true);
+  assertEquals(body.model, "test-vision");
+  assertEquals(body.timeoutBudgetMs, 30_000);
   assertEquals("VISION_API_KEY" in body, false);
+  assertEquals("VISION_BASE_URL" in body, false);
 });
 
 Deno.test("diagnose returns 503 before parsing when configuration is missing", async () => {
@@ -256,6 +259,7 @@ Deno.test("diagnose retries once with validation feedback", async () => {
     body: JSON.stringify({ logText: "Epoch 14 loss=nan", domainHint: "AI/ML" }),
   }));
   assertEquals(response.status, 200);
+  assertEquals(response.headers.get("x-diagnosis-model"), "test-vision");
   assertEquals(calls, 2);
   assertEquals(retryMessageCount, 4);
   assertEquals((await response.json()).caseTitle, "训练损失发散");
