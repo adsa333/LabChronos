@@ -160,7 +160,7 @@ export function repairDiagnosis(value: unknown): unknown {
   if (!isRecord(value)) return value;
 
   const observedSymptoms = Array.isArray(value.observedSymptoms)
-    ? value.observedSymptoms.map((symptom) => {
+    ? value.observedSymptoms.slice(0, 5).map((symptom) => {
         if (!isRecord(symptom)) return symptom;
         const repaired = { ...symptom };
         const bbox = symptom.bbox;
@@ -180,10 +180,15 @@ export function repairDiagnosis(value: unknown): unknown {
   );
 
   let hypotheses = Array.isArray(value.hypotheses)
-    ? value.hypotheses.map((hypothesis) => {
+    ? value.hypotheses.slice(0, 4).map((hypothesis) => {
         if (!isRecord(hypothesis)) return hypothesis;
+        let subCauses = Array.isArray(hypothesis.subCauses) ? hypothesis.subCauses : [];
+        if (subCauses.length > 2) subCauses = subCauses.slice(0, 2);
+        else if (subCauses.length === 1) subCauses = [subCauses[0], "待结合对照实验进一步确认"];
+        else if (subCauses.length === 0) subCauses = ["待结合现有证据进一步确认", "待结合对照实验进一步确认"];
         return {
           ...hypothesis,
+          subCauses,
           evidenceFor: Array.isArray(hypothesis.evidenceFor)
             ? [...new Set(hypothesis.evidenceFor.filter((id): id is string => typeof id === "string" && symptomIds.has(id)))]
             : hypothesis.evidenceFor,
@@ -197,7 +202,7 @@ export function repairDiagnosis(value: unknown): unknown {
     : [];
 
   const questions = Array.isArray(value.questions)
-    ? value.questions.map((question) => {
+    ? value.questions.slice(0, 3).map((question) => {
         if (!isRecord(question) || !Array.isArray(question.options)) return question;
         const zeroScores = () => Object.fromEntries(hypothesisIds.map((id) => [id, 0]));
         const options = question.options.map((option) => {
@@ -219,6 +224,23 @@ export function repairDiagnosis(value: unknown): unknown {
             options[lastIndex] = { label: "不确定", scoreDelta: zeroScores() };
           }
         }
+        options.forEach((option, optionIndex) => {
+          if (optionIndex === options.length - 1 || !isRecord(option) || !isRecord(option.scoreDelta)) return;
+          const scoreDelta = option.scoreDelta as Record<string, number>;
+          let positiveId = hypothesisIds.find((id) => scoreDelta[id] > 0);
+          if (!positiveId && hypothesisIds.length > 0) {
+            const bestId = hypothesisIds.reduce((best, id) => scoreDelta[id] > scoreDelta[best] ? id : best, hypothesisIds[0]);
+            positiveId = bestId;
+            scoreDelta[bestId] = 25;
+          }
+          if (!hypothesisIds.some((id) => scoreDelta[id] < 0)) {
+            const candidates = hypothesisIds.filter((id) => id !== positiveId);
+            if (candidates.length > 0) {
+              const negativeId = candidates.reduce((lowest, id) => scoreDelta[id] < scoreDelta[lowest] ? id : lowest, candidates[0]);
+              scoreDelta[negativeId] = -20;
+            }
+          }
+        });
         return { ...question, options };
       })
     : value.questions;

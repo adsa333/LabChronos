@@ -112,7 +112,7 @@ function normalizePriorScores(hypotheses) {
 function repairDiagnosis(value) {
   if (!isRecord(value)) return value;
   const observedSymptoms = Array.isArray(value.observedSymptoms)
-    ? value.observedSymptoms.map((symptom) => {
+    ? value.observedSymptoms.slice(0, 5).map((symptom) => {
         if (!isRecord(symptom)) return symptom;
         const repaired = { ...symptom };
         const bbox = symptom.bbox;
@@ -130,10 +130,15 @@ function repairDiagnosis(value) {
   );
 
   let hypotheses = Array.isArray(value.hypotheses)
-    ? value.hypotheses.map((hypothesis) => {
+    ? value.hypotheses.slice(0, 4).map((hypothesis) => {
         if (!isRecord(hypothesis)) return hypothesis;
+        let subCauses = Array.isArray(hypothesis.subCauses) ? hypothesis.subCauses : [];
+        if (subCauses.length > 2) subCauses = subCauses.slice(0, 2);
+        else if (subCauses.length === 1) subCauses = [subCauses[0], "待结合对照实验进一步确认"];
+        else if (subCauses.length === 0) subCauses = ["待结合现有证据进一步确认", "待结合对照实验进一步确认"];
         return {
           ...hypothesis,
+          subCauses,
           evidenceFor: Array.isArray(hypothesis.evidenceFor)
             ? [...new Set(hypothesis.evidenceFor.filter((id) => typeof id === "string" && symptomIds.has(id)))]
             : hypothesis.evidenceFor,
@@ -147,7 +152,7 @@ function repairDiagnosis(value) {
     : [];
 
   const questions = Array.isArray(value.questions)
-    ? value.questions.map((question) => {
+    ? value.questions.slice(0, 3).map((question) => {
         if (!isRecord(question) || !Array.isArray(question.options)) return question;
         const zeroScores = () => Object.fromEntries(hypothesisIds.map((id) => [id, 0]));
         const options = question.options.map((option) => {
@@ -169,6 +174,23 @@ function repairDiagnosis(value) {
             options[lastIndex] = { label: "不确定", scoreDelta: zeroScores() };
           }
         }
+        options.forEach((option, optionIndex) => {
+          if (optionIndex === options.length - 1 || !isRecord(option) || !isRecord(option.scoreDelta)) return;
+          const scoreDelta = option.scoreDelta;
+          let positiveId = hypothesisIds.find((id) => scoreDelta[id] > 0);
+          if (!positiveId && hypothesisIds.length > 0) {
+            const bestId = hypothesisIds.reduce((best, id) => scoreDelta[id] > scoreDelta[best] ? id : best, hypothesisIds[0]);
+            positiveId = bestId;
+            scoreDelta[bestId] = 25;
+          }
+          if (!hypothesisIds.some((id) => scoreDelta[id] < 0)) {
+            const candidates = hypothesisIds.filter((id) => id !== positiveId);
+            if (candidates.length > 0) {
+              const negativeId = candidates.reduce((lowest, id) => scoreDelta[id] < scoreDelta[lowest] ? id : lowest, candidates[0]);
+              scoreDelta[negativeId] = -20;
+            }
+          }
+        });
         return { ...question, options };
       })
     : value.questions;
@@ -617,6 +639,28 @@ function percent(value) {
   return `${(value * 100).toFixed(1)}%`;
 }
 
+function summarizeGroup(results) {
+  const firstPassCount = results.filter((result) => result.firstPass).length;
+  const finalValidCount = results.filter((result) => result.finalValid).length;
+  const initialTop1Hits = results.filter((result) => result.initialTop1?.hit === true).length;
+  const finalTop1Hits = results.filter((result) => result.finalTop1?.hit === true).length;
+  return {
+    totalCases: results.length,
+    firstPassCount,
+    finalValidCount,
+    finalLegalRate: ratio(finalValidCount, results.length),
+    initialTop1Hits,
+    finalTop1Hits,
+    initialTop1HitRate: ratio(initialTop1Hits, results.length),
+    finalTop1HitRate: ratio(finalTop1Hits, results.length),
+    over30SecondsCount: results.filter((result) => result.durationMs > 30_000).length,
+  };
+}
+
+function printGroupSummary(label, summary) {
+  console.log(`${label}：合法率 ${summary.finalValidCount}/${summary.totalCases} = ${percent(summary.finalLegalRate)}；初始 Top-1 ${summary.initialTop1Hits}/${summary.totalCases} = ${percent(summary.initialTop1HitRate)}；最终 Top-1 ${summary.finalTop1Hits}/${summary.totalCases} = ${percent(summary.finalTop1HitRate)}；超过 30 秒 ${summary.over30SecondsCount} 例`);
+}
+
 async function main() {
   const systemPrompt = readSystemPrompt();
   const manifest = readJson(resolve(ROOT, "eval/cases/manifest.json"));
@@ -652,24 +696,18 @@ async function main() {
     results.push(await runCase(testCase, systemPrompt));
   }
 
-  const validResults = results.filter((result) => result.finalValid);
-  const firstPassCount = results.filter((result) => result.firstPass).length;
+  const standard15 = summarizeGroup(results.filter((result) => result.source === "cases"));
+  const presets3 = summarizeGroup(results.filter((result) => result.source === "presets"));
+  const overall = summarizeGroup(results);
   const retriedCount = results.filter((result) => result.retried).length;
-  const initialTop1Hits = validResults.filter((result) => result.initialTop1.hit).length;
-  const finalTop1Hits = validResults.filter((result) => result.finalTop1.hit).length;
   const summary = {
-    totalCases: results.length,
+    ...overall,
     multimodalCases: results.filter((result) => result.multimodal).length,
     totalDurationMs: results.reduce((total, result) => total + result.durationMs, 0),
-    firstPassCount,
     retriedCount,
-    finalValidCount: validResults.length,
-    initialTop1Hits,
-    finalTop1Hits,
-    firstPassRate: ratio(firstPassCount, results.length),
-    finalLegalRate: ratio(validResults.length, results.length),
-    initialTop1HitRate: ratio(initialTop1Hits, validResults.length),
-    finalTop1HitRate: ratio(finalTop1Hits, validResults.length),
+    firstPassRate: ratio(overall.firstPassCount, results.length),
+    standard15,
+    presets3,
   };
   const report = {
     schemaVersion: 1,
@@ -680,7 +718,7 @@ async function main() {
       sha256: createHash("sha256").update(systemPrompt).digest("hex"),
     },
     methodology: {
-      top1Denominator: "finalValidCount",
+      top1Denominator: "各组全部用例数（standard15=15、presets3=3、总体=18）；解析失败计为 Top-1 未命中。",
       match: "NFKC 规范化后，假设内容包含 expected.trueCause，或包含任一 expected.keywords，即判为命中。",
       idealAnswers: "枚举每题全部实质性选项（排除末位不确定），按 weight=max(5, priorScore+sum(scoreDelta)) 推演，选择正确假设夺冠且概率最高的路径。",
       privacy: "不保存输入、图片、expected、distractors、模型原文、上游响应或密钥。",
@@ -703,11 +741,10 @@ async function main() {
     理想Top1: result.finalTop1 ? (result.finalTop1.hit ? "命中" : "未中") : "—",
     错误: result.error?.code ?? "",
   })));
-  console.log(`首次一次通过率：${firstPassCount}/${results.length} = ${percent(summary.firstPassRate)}`);
-  console.log(`修复重试后总合法率：${validResults.length}/${results.length} = ${percent(summary.finalLegalRate)}`);
-  console.log(`初始 priorScore Top-1 命中率（合法结果）：${initialTop1Hits}/${validResults.length} = ${percent(summary.initialTop1HitRate)}`);
-  console.log(`理想答案最终冠军 Top-1 命中率（合法结果）：${finalTop1Hits}/${validResults.length} = ${percent(summary.finalTop1HitRate)}`);
-  console.log(`二次重试：${retriedCount}/${results.length} 例；报告已写入 eval/report.json。`);
+  console.log(`首次一次通过率：${overall.firstPassCount}/${results.length} = ${percent(summary.firstPassRate)}；二次重试：${retriedCount}/${results.length} 例`);
+  printGroupSummary("标准 15 例", standard15);
+  printGroupSummary("全部 18 例", overall);
+  console.log("报告已写入 eval/report.json。");
 }
 
 main().catch((error) => {
