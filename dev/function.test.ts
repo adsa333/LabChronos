@@ -1,4 +1,10 @@
-import { parseDiagnosisContent } from "../functions/diagnosis.ts";
+import { parseDiagnosisContent, repairDiagnosis, validateDiagnosis } from "../functions/diagnosis.ts";
+import {
+  hasPositiveAndNegativeDelta,
+  parseDiagnosisContent as parseCoreDiagnosisContent,
+  repairDiagnosis as repairCoreDiagnosis,
+  validateDiagnosis as validateCoreDiagnosis,
+} from "../functions/diagnosis-core.mjs";
 import { createHandler } from "../functions/handler.ts";
 
 function assert(condition: unknown, message = "assertion failed"): asserts condition {
@@ -111,6 +117,47 @@ Deno.test("repairDiagnosis normalizes a fenced model result", () => {
   assert(Object.values(parsed.data.questions[0].options[3].scoreDelta).every((delta) => delta === 0));
 });
 
+Deno.test("diagnosis core and TS wrapper stay consistent", () => {
+  const damaged = JSON.parse(JSON.stringify(validDiagnosis));
+  damaged.hypotheses[0].priorScore = 2;
+  damaged.hypotheses[0].evidenceFor = ["missing", "s1"];
+  damaged.observedSymptoms[0].bbox = [0, 0, 1, 1];
+  damaged.questions[0].options[0].scoreDelta = { h1: 100, h2: -100 };
+  const content = `\`\`\`json\n${JSON.stringify(damaged)}\n\`\`\``;
+
+  assertEquals(JSON.stringify(validateDiagnosis(damaged)), JSON.stringify(validateCoreDiagnosis(damaged)));
+  assertEquals(JSON.stringify(repairDiagnosis(damaged)), JSON.stringify(repairCoreDiagnosis(damaged)));
+  assertEquals(JSON.stringify(parseDiagnosisContent(content)), JSON.stringify(parseCoreDiagnosisContent(content)));
+});
+
+Deno.test("repair preserves one-sided nonzero scoreDelta semantics", () => {
+  const damaged = JSON.parse(JSON.stringify(validDiagnosis));
+  const originalScores = { h1: 1, h2: 2, h3: 3 };
+  damaged.questions[0].options[0].scoreDelta = originalScores;
+  const repaired = repairCoreDiagnosis(damaged);
+
+  assertEquals(JSON.stringify(repaired.questions[0].options[0].scoreDelta), JSON.stringify(originalScores));
+  assert(validateCoreDiagnosis(repaired).success, "nonzero one-sided deltas should satisfy the contract");
+  assertEquals(hasPositiveAndNegativeDelta(repaired), false);
+});
+
+Deno.test("repair stringifies paramDiff values without hiding raw schema issues", () => {
+  const damaged = JSON.parse(JSON.stringify(validDiagnosis));
+  damaged.hypotheses[0].minimalControl.paramDiff[0].before = 50;
+  damaged.hypotheses[0].minimalControl.paramDiff[0].after = false;
+
+  const rawValidation = validateCoreDiagnosis(damaged);
+  assertEquals(rawValidation.success, false);
+  assert(rawValidation.issues.some((issue) => issue.path === "hypotheses.0.minimalControl.paramDiff"));
+
+  const repairsApplied: string[] = [];
+  const repaired = repairCoreDiagnosis(damaged, repairsApplied);
+  assertEquals(repaired.hypotheses[0].minimalControl.paramDiff[0].before, "50");
+  assertEquals(repaired.hypotheses[0].minimalControl.paramDiff[0].after, "false");
+  assert(repairsApplied.includes("paramDiff_stringified"));
+  assert(validateCoreDiagnosis(repaired).success, "stringified paramDiff should satisfy the contract");
+});
+
 Deno.test("parseDiagnosisContent extracts JSON surrounded by prose", () => {
   const parsed = parseDiagnosisContent(`模型输出如下：\n${JSON.stringify(validDiagnosis)}\n以上。`);
   assert(parsed.ok, "braced JSON fallback should validate");
@@ -124,7 +171,10 @@ Deno.test("health checks configuration without exposing secrets", async () => {
   const body = await response.json();
   assertEquals(body.ok, true);
   assertEquals(body.configured, true);
+  assertEquals(body.model, "test-vision");
+  assertEquals(body.timeoutBudgetMs, 30_000);
   assertEquals("VISION_API_KEY" in body, false);
+  assertEquals("VISION_BASE_URL" in body, false);
 });
 
 Deno.test("diagnose returns 503 before parsing when configuration is missing", async () => {
@@ -153,6 +203,41 @@ Deno.test("diagnose limits each IP to ten requests per minute", async () => {
   assertEquals((await limited.json()).error, "rate_limit_exceeded");
 });
 
+Deno.test("diagnose disables thinking only for Qwen3 or Aliyun endpoints", async () => {
+  const cases = [
+    { name: "Qwen3 model", model: "qwen3.7-flash", baseUrl: "https://example.test/v1", disableThinking: true },
+    { name: "Aliyun endpoint", model: "test-vision", baseUrl: "https://dashscope.aliyuncs.com/compatible-mode/v1", disableThinking: true },
+    { name: "generic OpenAI endpoint", model: "test-vision", baseUrl: "https://example.test/v1", disableThinking: false },
+  ];
+
+  for (const testCase of cases) {
+    let hasEnableThinking = false;
+    let enableThinking: boolean | undefined;
+    const handler = createHandler({
+      env: (name) => ({
+        VISION_API_KEY: "test-key",
+        VISION_BASE_URL: testCase.baseUrl,
+        VISION_MODEL: testCase.model,
+      }[name]),
+      fetch: async (_input, init) => {
+        const requestBody = JSON.parse(String(init?.body));
+        hasEnableThinking = "enable_thinking" in requestBody;
+        enableThinking = requestBody.enable_thinking;
+        return Response.json({ choices: [{ message: { content: JSON.stringify(validDiagnosis) } }] });
+      },
+    });
+    const response = await handler(new Request("http://local/api/diagnose", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ logText: "loss=nan", domainHint: "AI/ML" }),
+    }));
+
+    assertEquals(response.status, 200, testCase.name);
+    assertEquals(hasEnableThinking, testCase.disableThinking, testCase.name);
+    if (testCase.disableThinking) assertEquals(enableThinking, false, testCase.name);
+  }
+});
+
 Deno.test("diagnose retries once with validation feedback", async () => {
   let calls = 0;
   let retryMessageCount = 0;
@@ -174,9 +259,38 @@ Deno.test("diagnose retries once with validation feedback", async () => {
     body: JSON.stringify({ logText: "Epoch 14 loss=nan", domainHint: "AI/ML" }),
   }));
   assertEquals(response.status, 200);
+  assertEquals(response.headers.get("x-diagnosis-model"), "test-vision");
   assertEquals(calls, 2);
   assertEquals(retryMessageCount, 4);
   assertEquals((await response.json()).caseTitle, "训练损失发散");
+});
+
+Deno.test("diagnose rounds fractional retry timeouts", async () => {
+  const originalNow = Date.now;
+  let now = 1000;
+  let calls = 0;
+  Date.now = () => now;
+  try {
+    const handler = createHandler({
+      env: configuredEnv,
+      fetch: async () => {
+        calls += 1;
+        if (calls === 1) now = 1000.5;
+        const content = calls === 1 ? "{}" : JSON.stringify(validDiagnosis);
+        return Response.json({ choices: [{ message: { content } }] });
+      },
+    });
+    const response = await handler(new Request("http://local/api/diagnose", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ logText: "loss=nan", domainHint: "AI/ML" }),
+    }));
+
+    assertEquals(response.status, 200);
+    assertEquals(calls, 2);
+  } finally {
+    Date.now = originalNow;
+  }
 });
 
 Deno.test("diagnose returns a sanitized parse error after two invalid results", async () => {

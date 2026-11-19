@@ -22,18 +22,28 @@ Node ≥ 20。Windows 下若 PowerShell 拦截 npm，改用 `npm.cmd`。
 
 - `VISION_API_KEY`：OpenAI 兼容多模态接口密钥。只在当前终端或 Qoder Sites Secrets 中配置，不要提交真实密钥。
 - `VISION_BASE_URL`：OpenAI 兼容接口基础地址。可使用阿里云百炼 DashScope 兼容端点 `https://dashscope.aliyuncs.com/compatible-mode/v1`，或百炼业务空间专属兼容端点。
-- `VISION_MODEL`：多模态视觉模型名称，当前选定为 `qwen3-vl-plus`。
+- `VISION_MODEL`：多模态视觉模型名称，最终选定为 `qwen3.8-flash`。
 
 在当前终端注入环境变量后运行评测：
 
 ```bash
 export VISION_API_KEY="sk-xxx"
 export VISION_BASE_URL="https://dashscope.aliyuncs.com/compatible-mode/v1"
-export VISION_MODEL="qwen3-vl-plus"
+export VISION_MODEL="qwen3.8-flash"
 node eval/run-eval.mjs
 ```
 
 脚本会依次评测 15 个标准病例与 3 组图片/日志多模态病例，并生成脱敏的 `eval/report.json`。
+
+最终实测：`qwen3.8-flash` 在关闭思考模式下，18 例端到端合法率 100%、标准 15 例 Top-1 86.7%、P95 20.15 秒，超过 30 秒的用例为 0 例。
+
+## 服务保护与部署假设
+
+- `/api/diagnose` 单次模型调用超时为 25 秒；仅在首次解析失败且已耗时不足 18 秒时重试一次，重试使用剩余预算，诊断总预算为 30 秒。
+- 请求体限制为图片不超过 4 MB、日志不超过 15000 字，超限返回 HTTP 413。
+- 基于进程内 `Map` 实施单 IP 每分钟 10 次限流，窗口为 60 秒；超限返回 HTTP 429，并携带 `Retry-After` 响应头。
+
+进程内 `Map` 限流针对 Qoder Sites 单实例演示环境设计。多实例水平扩展时计数不全局共享，实例冷启动也会重置计数；生产多实例需配合共享 KV 或网关限流。当前由存放在 Qoder Sites Secrets 的上游 API Key 所对应的平台配额提供硬性兜底。
 
 ## 技术栈
 

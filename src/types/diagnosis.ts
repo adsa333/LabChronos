@@ -30,7 +30,7 @@ export interface Hypothesis {
 
 export interface QuestionOption {
   label: string;
-  scoreDelta: Record<string, number>; // 必须覆盖所有 hypothesis id，取值范围 -40 ~ +40
+  scoreDelta: Record<string, number>; // 覆盖所有 hypothesis id，取值 -40 ~ +40；实质性选项不得全为 0
 }
 
 export interface Question {

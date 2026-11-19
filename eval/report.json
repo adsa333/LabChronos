@@ -1,65 +1,146 @@
 {
   "schemaVersion": 1,
-  "generatedAt": "2026-11-14T14:28:32.374Z",
-  "model": "qwen3-vl-plus",
+  "generatedAt": "2026-11-19T02:11:24.301Z",
+  "model": "qwen3.8-flash",
   "prompt": {
     "source": "functions/prompts/diagnose.ts",
-    "sha256": "8da835e11a3d6368d38d1b576a08f05f0380df7a4834fec8d11c363c6a88d377"
+    "sha256": "9feae3ab7a07f62782ed9f726189562b914928d3daed1b0c07f34a9581d0063a"
   },
   "methodology": {
-    "top1Denominator": "finalValidCount",
+    "top1Denominator": "各组全部用例数（standard15=15、presets3=3、总体=18）；解析失败计为 Top-1 未命中。",
     "match": "NFKC 规范化后，假设内容包含 expected.trueCause，或包含任一 expected.keywords，即判为命中。",
     "idealAnswers": "枚举每题全部实质性选项（排除末位不确定），按 weight=max(5, priorScore+sum(scoreDelta)) 推演，选择正确假设夺冠且概率最高的路径。",
-    "privacy": "不保存输入、图片、expected、distractors、模型原文、上游响应或密钥。"
+    "privacy": "不保存输入、图片、expected、distractors、模型原文、上游响应或密钥；仅保存假设 id/title/priorScore 摘要。"
   },
   "summary": {
     "totalCases": 18,
+    "rawJsonSyntaxPassCount": 18,
+    "rawJsonSyntaxPassRate": 1,
+    "rawSchemaPassCount": 10,
+    "rawSchemaPassRate": 0.5556,
+    "rawStrictDeltaPassCount": 11,
+    "rawStrictDeltaPassRate": 0.6111,
+    "firstPassCount": 10,
+    "finalValidCount": 18,
+    "finalLegalRate": 1,
+    "scoreDeltaModifiedCount": 2,
+    "initialTop1Hits": 16,
+    "initialTop1HitRate": 0.8889,
+    "finalTop1Hits": 16,
+    "finalTop1HitRate": 0.8889,
+    "p50Ms": 11031,
+    "p95Ms": 20954,
+    "over30SecondsCount": 0,
     "multimodalCases": 3,
-    "totalDurationMs": 653983,
-    "firstPassCount": 13,
-    "retriedCount": 5,
-    "finalValidCount": 15,
-    "initialTop1Hits": 13,
-    "finalTop1Hits": 13,
-    "firstPassRate": 0.7222,
-    "finalLegalRate": 0.8333,
-    "initialTop1HitRate": 0.8667,
-    "finalTop1HitRate": 0.8667
+    "totalDurationMs": 231924,
+    "retriedCount": 8,
+    "firstPassRate": 0.5556,
+    "standard15": {
+      "totalCases": 15,
+      "rawJsonSyntaxPassCount": 15,
+      "rawJsonSyntaxPassRate": 1,
+      "rawSchemaPassCount": 8,
+      "rawSchemaPassRate": 0.5333,
+      "rawStrictDeltaPassCount": 10,
+      "rawStrictDeltaPassRate": 0.6667,
+      "firstPassCount": 8,
+      "finalValidCount": 15,
+      "finalLegalRate": 1,
+      "scoreDeltaModifiedCount": 2,
+      "initialTop1Hits": 13,
+      "initialTop1HitRate": 0.8667,
+      "finalTop1Hits": 13,
+      "finalTop1HitRate": 0.8667,
+      "p50Ms": 10931,
+      "p95Ms": 20954,
+      "over30SecondsCount": 0
+    },
+    "presets3": {
+      "totalCases": 3,
+      "rawJsonSyntaxPassCount": 3,
+      "rawJsonSyntaxPassRate": 1,
+      "rawSchemaPassCount": 2,
+      "rawSchemaPassRate": 0.6667,
+      "rawStrictDeltaPassCount": 1,
+      "rawStrictDeltaPassRate": 0.3333,
+      "firstPassCount": 2,
+      "finalValidCount": 3,
+      "finalLegalRate": 1,
+      "scoreDeltaModifiedCount": 0,
+      "initialTop1Hits": 3,
+      "initialTop1HitRate": 1,
+      "finalTop1Hits": 3,
+      "finalTop1HitRate": 1,
+      "p50Ms": 12775,
+      "p95Ms": 19008,
+      "over30SecondsCount": 0
+    }
   },
   "results": [
     {
       "id": "ai-01-high-learning-rate",
       "source": "cases",
       "multimodal": false,
-      "durationMs": 29033,
-      "firstAttemptMs": 29030,
-      "retryAttemptMs": null,
-      "firstPass": true,
-      "retried": false,
+      "durationMs": 20123,
+      "firstAttemptMs": 9338,
+      "retryAttemptMs": 10781,
+      "rawJsonSyntaxValid": true,
+      "rawSchemaValid": false,
+      "rawSchemaIssues": [
+        {
+          "path": "hypotheses",
+          "message": "必须包含 3~4 个假设"
+        }
+      ],
+      "rawStrictDeltaValid": true,
+      "repairedFirstPass": false,
+      "repairsApplied": [
+        "priorScore_normalized"
+      ],
+      "scoreDeltaModified": false,
+      "diagnosedHypotheses": [
+        {
+          "id": "h1",
+          "title": "学习率过高导致优化发散",
+          "priorScore": 50
+        },
+        {
+          "id": "h2",
+          "title": "数据分布不均或标签噪声",
+          "priorScore": 30
+        },
+        {
+          "id": "h3",
+          "title": "模型容量不足或架构缺陷",
+          "priorScore": 20
+        }
+      ],
+      "firstPass": false,
+      "retried": true,
       "finalValid": true,
       "initialTop1": {
         "hypothesisId": "h1",
-        "title": "学习率过高导致优化路径穿越损失曲面鞍点/陡坡",
-        "priorScore": 45,
+        "title": "学习率过高导致优化发散",
+        "priorScore": 50,
         "hit": true
       },
       "finalTop1": {
         "hypothesisId": "h1",
-        "title": "学习率过高导致优化路径穿越损失曲面鞍点/陡坡",
-        "probability": 0.7857,
+        "title": "学习率过高导致优化发散",
+        "probability": 0.9091,
         "hit": true
       },
       "idealAnswers": [
         {
           "questionId": "q1",
-          "optionIndex": 1
+          "optionIndex": 0
         },
         {
           "questionId": "q2",
           "optionIndex": 0
         }
       ],
-      "firstParseFeedback": null,
+      "firstParseFeedback": "hypotheses: 必须包含 3~4 个假设",
       "finalParseFeedback": null,
       "error": null
     },
@@ -67,58 +148,57 @@
       "id": "ai-02-nan-input-features",
       "source": "cases",
       "multimodal": false,
-      "durationMs": 25631,
-      "firstAttemptMs": 25630,
-      "retryAttemptMs": null,
-      "firstPass": true,
-      "retried": false,
-      "finalValid": true,
-      "initialTop1": {
-        "hypothesisId": "h1",
-        "title": "特征列预处理引入NaN（如除零或log(0)）",
-        "priorScore": 45,
-        "hit": true
-      },
-      "finalTop1": {
-        "hypothesisId": "h1",
-        "title": "特征列预处理引入NaN（如除零或log(0)）",
-        "probability": 0.84,
-        "hit": true
-      },
-      "idealAnswers": [
+      "durationMs": 17918,
+      "firstAttemptMs": 9172,
+      "retryAttemptMs": 8744,
+      "rawJsonSyntaxValid": true,
+      "rawSchemaValid": false,
+      "rawSchemaIssues": [
         {
-          "questionId": "q1",
-          "optionIndex": 0
+          "path": "hypotheses",
+          "message": "必须包含 3~4 个假设"
         },
         {
-          "questionId": "q2",
-          "optionIndex": 0
+          "path": "questions",
+          "message": "必须包含 2~3 道问题"
         }
       ],
-      "firstParseFeedback": null,
-      "finalParseFeedback": null,
-      "error": null
-    },
-    {
-      "id": "ai-03-validation-mode-mismatch",
-      "source": "cases",
-      "multimodal": false,
-      "durationMs": 27373,
-      "firstAttemptMs": 27372,
-      "retryAttemptMs": null,
-      "firstPass": true,
-      "retried": false,
+      "rawStrictDeltaValid": false,
+      "repairedFirstPass": false,
+      "repairsApplied": [
+        "priorScore_normalized"
+      ],
+      "scoreDeltaModified": false,
+      "diagnosedHypotheses": [
+        {
+          "id": "h1",
+          "title": "数据管道未过滤NaN导致前向传播污染",
+          "priorScore": 50
+        },
+        {
+          "id": "h2",
+          "title": "AMP混合精度下FP16数值范围溢出",
+          "priorScore": 30
+        },
+        {
+          "id": "h3",
+          "title": "梯度裁剪阈值过小引发数值不稳定",
+          "priorScore": 20
+        }
+      ],
+      "firstPass": false,
+      "retried": true,
       "finalValid": true,
       "initialTop1": {
         "hypothesisId": "h1",
-        "title": "验证时Dropout未被正确禁用（推理模式误用训练模式）",
-        "priorScore": 45,
+        "title": "数据管道未过滤NaN导致前向传播污染",
+        "priorScore": 50,
         "hit": true
       },
       "finalTop1": {
         "hypothesisId": "h1",
-        "title": "验证时Dropout未被正确禁用（推理模式误用训练模式）",
-        "probability": 0.8148,
+        "title": "数据管道未过滤NaN导致前向传播污染",
+        "probability": 0.9,
         "hit": true
       },
       "idealAnswers": [
@@ -129,6 +209,66 @@
         {
           "questionId": "q2",
           "optionIndex": 1
+        }
+      ],
+      "firstParseFeedback": "hypotheses: 必须包含 3~4 个假设；questions: 必须包含 2~3 道问题",
+      "finalParseFeedback": null,
+      "error": null
+    },
+    {
+      "id": "ai-03-validation-mode-mismatch",
+      "source": "cases",
+      "multimodal": false,
+      "durationMs": 8117,
+      "firstAttemptMs": 8116,
+      "retryAttemptMs": null,
+      "rawJsonSyntaxValid": true,
+      "rawSchemaValid": true,
+      "rawSchemaIssues": [],
+      "rawStrictDeltaValid": true,
+      "repairedFirstPass": true,
+      "repairsApplied": [],
+      "scoreDeltaModified": false,
+      "diagnosedHypotheses": [
+        {
+          "id": "h1",
+          "title": "eval模式未关闭dropout",
+          "priorScore": 50
+        },
+        {
+          "id": "h2",
+          "title": "BN使用batch统计量错误",
+          "priorScore": 30
+        },
+        {
+          "id": "h3",
+          "title": "过拟合导致泛化差",
+          "priorScore": 20
+        }
+      ],
+      "firstPass": true,
+      "retried": false,
+      "finalValid": true,
+      "initialTop1": {
+        "hypothesisId": "h1",
+        "title": "eval模式未关闭dropout",
+        "priorScore": 50,
+        "hit": true
+      },
+      "finalTop1": {
+        "hypothesisId": "h1",
+        "title": "eval模式未关闭dropout",
+        "probability": 0.8,
+        "hit": true
+      },
+      "idealAnswers": [
+        {
+          "questionId": "q1",
+          "optionIndex": 1
+        },
+        {
+          "questionId": "q2",
+          "optionIndex": 0
         }
       ],
       "firstParseFeedback": null,
@@ -139,64 +279,53 @@
       "id": "ai-04-scheduler-gamma-error",
       "source": "cases",
       "multimodal": false,
-      "durationMs": 60387,
-      "firstAttemptMs": 29896,
-      "retryAttemptMs": 30490,
+      "durationMs": 10931,
+      "firstAttemptMs": 4808,
+      "retryAttemptMs": 6121,
+      "rawJsonSyntaxValid": true,
+      "rawSchemaValid": false,
+      "rawSchemaIssues": [
+        {
+          "path": "hypotheses",
+          "message": "必须包含 3~4 个假设"
+        }
+      ],
+      "rawStrictDeltaValid": false,
+      "repairedFirstPass": false,
+      "repairsApplied": [
+        "priorScore_normalized"
+      ],
+      "scoreDeltaModified": false,
+      "diagnosedHypotheses": [
+        {
+          "id": "h1",
+          "title": "StepLR gamma参数设置错误",
+          "priorScore": 50
+        },
+        {
+          "id": "h2",
+          "title": "Adam优化器动量累积失效",
+          "priorScore": 30
+        },
+        {
+          "id": "h3",
+          "title": "模型容量不足致欠拟合震荡",
+          "priorScore": 20
+        }
+      ],
       "firstPass": false,
       "retried": true,
-      "finalValid": false,
-      "initialTop1": null,
-      "finalTop1": null,
-      "idealAnswers": [],
-      "firstParseFeedback": "questions.1.options.0: 实质性选项必须包含 >=+15 与 <=-10 的互斥区分",
-      "finalParseFeedback": "questions.1.options.0: 实质性选项必须包含 >=+15 与 <=-10 的互斥区分",
-      "error": {
-        "phase": "parse",
-        "code": "diagnosis_parse_failed",
-        "status": null
-      }
-    },
-    {
-      "id": "ai-05-class-imbalance",
-      "source": "cases",
-      "multimodal": false,
-      "durationMs": 56253,
-      "firstAttemptMs": 27845,
-      "retryAttemptMs": 28408,
-      "firstPass": false,
-      "retried": true,
-      "finalValid": false,
-      "initialTop1": null,
-      "finalTop1": null,
-      "idealAnswers": [],
-      "firstParseFeedback": "questions.1.options.0: 实质性选项必须包含 >=+15 与 <=-10 的互斥区分；questions.1.options.1: 实质性选项必须包含 >=+15 与 <=-10 的互斥区分",
-      "finalParseFeedback": "questions.1.options.0: 实质性选项必须包含 >=+15 与 <=-10 的互斥区分；questions.1.options.1: 实质性选项必须包含 >=+15 与 <=-10 的互斥区分",
-      "error": {
-        "phase": "parse",
-        "code": "diagnosis_parse_failed",
-        "status": null
-      }
-    },
-    {
-      "id": "ai-06-log-zero-loss",
-      "source": "cases",
-      "multimodal": false,
-      "durationMs": 28558,
-      "firstAttemptMs": 28557,
-      "retryAttemptMs": null,
-      "firstPass": true,
-      "retried": false,
       "finalValid": true,
       "initialTop1": {
         "hypothesisId": "h1",
-        "title": "Softmax/Sigmoid 输出饱和导致 log(0) 数值下溢",
+        "title": "StepLR gamma参数设置错误",
         "priorScore": 50,
         "hit": true
       },
       "finalTop1": {
         "hypothesisId": "h1",
-        "title": "Softmax/Sigmoid 输出饱和导致 log(0) 数值下溢",
-        "probability": 0.8214,
+        "title": "StepLR gamma参数设置错误",
+        "probability": 0.9091,
         "hit": true
       },
       "idealAnswers": [
@@ -209,31 +338,62 @@
           "optionIndex": 0
         }
       ],
-      "firstParseFeedback": null,
+      "firstParseFeedback": "hypotheses: 必须包含 3~4 个假设",
       "finalParseFeedback": null,
       "error": null
     },
     {
-      "id": "bio-01-pcr-annealing-high",
+      "id": "ai-05-class-imbalance",
       "source": "cases",
       "multimodal": false,
-      "durationMs": 24918,
-      "firstAttemptMs": 24917,
-      "retryAttemptMs": null,
-      "firstPass": true,
-      "retried": false,
+      "durationMs": 14523,
+      "firstAttemptMs": 6493,
+      "retryAttemptMs": 8029,
+      "rawJsonSyntaxValid": true,
+      "rawSchemaValid": false,
+      "rawSchemaIssues": [
+        {
+          "path": "hypotheses",
+          "message": "必须包含 3~4 个假设"
+        }
+      ],
+      "rawStrictDeltaValid": false,
+      "repairedFirstPass": false,
+      "repairsApplied": [
+        "priorScore_normalized"
+      ],
+      "scoreDeltaModified": false,
+      "diagnosedHypotheses": [
+        {
+          "id": "h1",
+          "title": "BCEWithLogitsLoss缺失pos_weight",
+          "priorScore": 50
+        },
+        {
+          "id": "h2",
+          "title": "特征提取器欠拟合正类模式",
+          "priorScore": 30
+        },
+        {
+          "id": "h3",
+          "title": "验证集标签存在系统性噪声",
+          "priorScore": 20
+        }
+      ],
+      "firstPass": false,
+      "retried": true,
       "finalValid": true,
       "initialTop1": {
         "hypothesisId": "h1",
-        "title": "退火温度过高导致引物无法有效结合模板",
-        "priorScore": 45,
-        "hit": true
+        "title": "BCEWithLogitsLoss缺失pos_weight",
+        "priorScore": 50,
+        "hit": false
       },
       "finalTop1": {
-        "hypothesisId": "h2",
-        "title": "模板二级结构阻碍引物结合",
-        "probability": 0.7619,
-        "hit": true
+        "hypothesisId": "h1",
+        "title": "BCEWithLogitsLoss缺失pos_weight",
+        "probability": 0.8696,
+        "hit": false
       },
       "idealAnswers": [
         {
@@ -243,6 +403,133 @@
         {
           "questionId": "q2",
           "optionIndex": 1
+        }
+      ],
+      "firstParseFeedback": "hypotheses: 必须包含 3~4 个假设",
+      "finalParseFeedback": null,
+      "error": null
+    },
+    {
+      "id": "ai-06-log-zero-loss",
+      "source": "cases",
+      "multimodal": false,
+      "durationMs": 10648,
+      "firstAttemptMs": 5813,
+      "retryAttemptMs": 4834,
+      "rawJsonSyntaxValid": true,
+      "rawSchemaValid": false,
+      "rawSchemaIssues": [
+        {
+          "path": "hypotheses",
+          "message": "必须包含 3~4 个假设"
+        }
+      ],
+      "rawStrictDeltaValid": true,
+      "repairedFirstPass": false,
+      "repairsApplied": [
+        "priorScore_normalized"
+      ],
+      "scoreDeltaModified": false,
+      "diagnosedHypotheses": [
+        {
+          "id": "h1",
+          "title": "Log(0)数值溢出",
+          "priorScore": 50
+        },
+        {
+          "id": "h2",
+          "title": "Sigmoid饱和溢出",
+          "priorScore": 30
+        },
+        {
+          "id": "h3",
+          "title": "AMP精度损失",
+          "priorScore": 20
+        }
+      ],
+      "firstPass": false,
+      "retried": true,
+      "finalValid": true,
+      "initialTop1": {
+        "hypothesisId": "h1",
+        "title": "Log(0)数值溢出",
+        "priorScore": 50,
+        "hit": true
+      },
+      "finalTop1": {
+        "hypothesisId": "h1",
+        "title": "Log(0)数值溢出",
+        "probability": 0.9091,
+        "hit": true
+      },
+      "idealAnswers": [
+        {
+          "questionId": "q1",
+          "optionIndex": 0
+        },
+        {
+          "questionId": "q2",
+          "optionIndex": 0
+        }
+      ],
+      "firstParseFeedback": "hypotheses: 必须包含 3~4 个假设",
+      "finalParseFeedback": null,
+      "error": null
+    },
+    {
+      "id": "bio-01-pcr-annealing-high",
+      "source": "cases",
+      "multimodal": false,
+      "durationMs": 8996,
+      "firstAttemptMs": 8995,
+      "retryAttemptMs": null,
+      "rawJsonSyntaxValid": true,
+      "rawSchemaValid": true,
+      "rawSchemaIssues": [],
+      "rawStrictDeltaValid": true,
+      "repairedFirstPass": true,
+      "repairsApplied": [],
+      "scoreDeltaModified": false,
+      "diagnosedHypotheses": [
+        {
+          "id": "h1",
+          "title": "退火温度超出引物Tm范围",
+          "priorScore": 55
+        },
+        {
+          "id": "h2",
+          "title": "MgCl2浓度抑制复性",
+          "priorScore": 25
+        },
+        {
+          "id": "h3",
+          "title": "循环数不足导致产量低",
+          "priorScore": 20
+        }
+      ],
+      "firstPass": true,
+      "retried": false,
+      "finalValid": true,
+      "initialTop1": {
+        "hypothesisId": "h1",
+        "title": "退火温度超出引物Tm范围",
+        "priorScore": 55,
+        "hit": true
+      },
+      "finalTop1": {
+        "hypothesisId": "h1",
+        "title": "退火温度超出引物Tm范围",
+        "probability": 0.8077,
+        "hit": true
+      },
+      "idealAnswers": [
+        {
+          "questionId": "q1",
+          "optionIndex": 0
+        },
+        {
+          "questionId": "q2",
+          "optionIndex": 0
         }
       ],
       "firstParseFeedback": null,
@@ -253,28 +540,52 @@
       "id": "bio-02-pcr-annealing-low",
       "source": "cases",
       "multimodal": false,
-      "durationMs": 28540,
-      "firstAttemptMs": 28539,
+      "durationMs": 8931,
+      "firstAttemptMs": 8930,
       "retryAttemptMs": null,
+      "rawJsonSyntaxValid": true,
+      "rawSchemaValid": true,
+      "rawSchemaIssues": [],
+      "rawStrictDeltaValid": true,
+      "repairedFirstPass": true,
+      "repairsApplied": [],
+      "scoreDeltaModified": false,
+      "diagnosedHypotheses": [
+        {
+          "id": "h1",
+          "title": "退火温度过低致错配",
+          "priorScore": 50
+        },
+        {
+          "id": "h2",
+          "title": "Mg2+浓度过高稳定错配",
+          "priorScore": 30
+        },
+        {
+          "id": "h3",
+          "title": "循环数过多放大噪声",
+          "priorScore": 20
+        }
+      ],
       "firstPass": true,
       "retried": false,
       "finalValid": true,
       "initialTop1": {
         "hypothesisId": "h1",
-        "title": "退火温度过低导致引物错配延伸",
-        "priorScore": 45,
+        "title": "退火温度过低致错配",
+        "priorScore": 50,
         "hit": true
       },
       "finalTop1": {
         "hypothesisId": "h1",
-        "title": "退火温度过低导致引物错配延伸",
-        "probability": 0.8148,
+        "title": "退火温度过低致错配",
+        "probability": 0.8696,
         "hit": true
       },
       "idealAnswers": [
         {
           "questionId": "q1",
-          "optionIndex": 1
+          "optionIndex": 0
         },
         {
           "questionId": "q2",
@@ -289,28 +600,52 @@
       "id": "bio-03-gel-overheating",
       "source": "cases",
       "multimodal": false,
-      "durationMs": 28832,
-      "firstAttemptMs": 28831,
+      "durationMs": 11031,
+      "firstAttemptMs": 11030,
       "retryAttemptMs": null,
+      "rawJsonSyntaxValid": true,
+      "rawSchemaValid": true,
+      "rawSchemaIssues": [],
+      "rawStrictDeltaValid": false,
+      "repairedFirstPass": true,
+      "repairsApplied": [],
+      "scoreDeltaModified": false,
+      "diagnosedHypotheses": [
+        {
+          "id": "h1",
+          "title": "焦耳热致边缘迁移加速",
+          "priorScore": 50
+        },
+        {
+          "id": "h2",
+          "title": "缓冲液离子强度局部差异",
+          "priorScore": 30
+        },
+        {
+          "id": "h3",
+          "title": "凝胶聚合不均匀",
+          "priorScore": 20
+        }
+      ],
       "firstPass": true,
       "retried": false,
       "finalValid": true,
       "initialTop1": {
         "hypothesisId": "h1",
-        "title": "边缘过热导致凝胶局部熔化/孔径增大",
-        "priorScore": 45,
+        "title": "焦耳热致边缘迁移加速",
+        "priorScore": 50,
         "hit": true
       },
       "finalTop1": {
         "hypothesisId": "h1",
-        "title": "边缘过热导致凝胶局部熔化/孔径增大",
-        "probability": 0.8148,
+        "title": "焦耳热致边缘迁移加速",
+        "probability": 0.8696,
         "hit": true
       },
       "idealAnswers": [
         {
           "questionId": "q1",
-          "optionIndex": 0
+          "optionIndex": 1
         },
         {
           "questionId": "q2",
@@ -325,35 +660,59 @@
       "id": "bio-04-enzyme-inactive",
       "source": "cases",
       "multimodal": false,
-      "durationMs": 53475,
-      "firstAttemptMs": 26655,
-      "retryAttemptMs": 26820,
-      "firstPass": false,
-      "retried": true,
+      "durationMs": 8036,
+      "firstAttemptMs": 8035,
+      "retryAttemptMs": null,
+      "rawJsonSyntaxValid": true,
+      "rawSchemaValid": true,
+      "rawSchemaIssues": [],
+      "rawStrictDeltaValid": true,
+      "repairedFirstPass": true,
+      "repairsApplied": [],
+      "scoreDeltaModified": false,
+      "diagnosedHypotheses": [
+        {
+          "id": "h1",
+          "title": "EcoRI因25℃存放4小时失活",
+          "priorScore": 50
+        },
+        {
+          "id": "h2",
+          "title": "质粒存在甲基化修饰阻碍切割",
+          "priorScore": 30
+        },
+        {
+          "id": "h3",
+          "title": "反应体系中残留抑制剂干扰酶活",
+          "priorScore": 20
+        }
+      ],
+      "firstPass": true,
+      "retried": false,
       "finalValid": true,
       "initialTop1": {
         "hypothesisId": "h1",
-        "title": "质粒DNA存在EcoRI位点甲基化阻断",
-        "priorScore": 45,
-        "hit": false
+        "title": "EcoRI因25℃存放4小时失活",
+        "priorScore": 50,
+        "hit": true
       },
       "finalTop1": {
-        "hypothesisId": "h2",
-        "title": "质粒DNA结构异常导致酶无法接近位点",
-        "probability": 0.75,
-        "hit": false
+        "hypothesisId": "h1",
+        "title": "EcoRI因25℃存放4小时失活",
+        "probability": 0.9091,
+        "hit": true
       },
       "idealAnswers": [
         {
           "questionId": "q1",
-          "optionIndex": 1
+          "optionIndex": 0
         },
         {
           "questionId": "q2",
-          "optionIndex": 0
+          "optionIndex": 1
         }
       ],
-      "firstParseFeedback": "questions.1.options.1: 实质性选项必须包含 >=+15 与 <=-10 的互斥区分",
+      "firstParseFeedback": null,
       "finalParseFeedback": null,
       "error": null
     },
@@ -361,22 +720,59 @@
       "id": "bio-05-dna-freeze-thaw",
       "source": "cases",
       "multimodal": false,
-      "durationMs": 54020,
-      "firstAttemptMs": 26930,
-      "retryAttemptMs": 27090,
+      "durationMs": 17529,
+      "firstAttemptMs": 6807,
+      "retryAttemptMs": 10721,
+      "rawJsonSyntaxValid": true,
+      "rawSchemaValid": false,
+      "rawSchemaIssues": [
+        {
+          "path": "hypotheses",
+          "message": "必须包含 3~4 个假设"
+        }
+      ],
+      "rawStrictDeltaValid": true,
+      "repairedFirstPass": false,
+      "repairsApplied": [
+        "priorScore_normalized",
+        "scoreDelta_keys_completed"
+      ],
+      "scoreDeltaModified": true,
+      "diagnosedHypotheses": [
+        {
+          "id": "h1",
+          "title": "反复冻融致机械剪切",
+          "priorScore": 50
+        },
+        {
+          "id": "h2",
+          "title": "核酸酶污染降解",
+          "priorScore": 30
+        },
+        {
+          "id": "h3",
+          "title": "凝胶电泳条件异常",
+          "priorScore": 20
+        },
+        {
+          "id": "h4",
+          "title": "上样量不足或损失",
+          "priorScore": 0
+        }
+      ],
       "firstPass": false,
       "retried": true,
       "finalValid": true,
       "initialTop1": {
         "hypothesisId": "h1",
-        "title": "反复冻融导致质粒超螺旋结构不可逆解旋与断裂",
-        "priorScore": 45,
+        "title": "反复冻融致机械剪切",
+        "priorScore": 50,
         "hit": true
       },
       "finalTop1": {
         "hypothesisId": "h1",
-        "title": "反复冻融导致质粒超螺旋结构不可逆解旋与断裂",
-        "probability": 0.7143,
+        "title": "反复冻融致机械剪切",
+        "probability": 0.8696,
         "hit": true
       },
       "idealAnswers": [
@@ -386,10 +782,10 @@
         },
         {
           "questionId": "q2",
-          "optionIndex": 1
+          "optionIndex": 0
         }
       ],
-      "firstParseFeedback": "questions.1.options.1: 实质性选项必须包含 >=+15 与 <=-10 的互斥区分",
+      "firstParseFeedback": "hypotheses: 必须包含 3~4 个假设",
       "finalParseFeedback": null,
       "error": null
     },
@@ -397,53 +793,129 @@
       "id": "phy-01-probe-attenuation-mismatch",
       "source": "cases",
       "multimodal": false,
-      "durationMs": 53588,
-      "firstAttemptMs": 26477,
-      "retryAttemptMs": 27111,
+      "durationMs": 20954,
+      "firstAttemptMs": 8675,
+      "retryAttemptMs": 12278,
+      "rawJsonSyntaxValid": true,
+      "rawSchemaValid": false,
+      "rawSchemaIssues": [
+        {
+          "path": "hypotheses",
+          "message": "必须包含 3~4 个假设"
+        }
+      ],
+      "rawStrictDeltaValid": true,
+      "repairedFirstPass": false,
+      "repairsApplied": [
+        "priorScore_normalized",
+        "scoreDelta_keys_completed"
+      ],
+      "scoreDeltaModified": true,
+      "diagnosedHypotheses": [
+        {
+          "id": "h1",
+          "title": "探头物理1x但示波器通道误设10x导致读数虚高",
+          "priorScore": 50
+        },
+        {
+          "id": "h2",
+          "title": "探头内部衰减网络故障导致实际输出异常",
+          "priorScore": 30
+        },
+        {
+          "id": "h3",
+          "title": "信号发生器输出阻抗失配引起电压反射",
+          "priorScore": 20
+        },
+        {
+          "id": "h4",
+          "title": "接地弹簧短路引入共模干扰噪声",
+          "priorScore": 0
+        }
+      ],
       "firstPass": false,
       "retried": true,
-      "finalValid": false,
-      "initialTop1": null,
-      "finalTop1": null,
-      "idealAnswers": [],
-      "firstParseFeedback": "questions.0.options.0: 实质性选项必须包含 >=+15 与 <=-10 的互斥区分",
-      "finalParseFeedback": "questions.0.options.0: 实质性选项必须包含 >=+15 与 <=-10 的互斥区分",
-      "error": {
-        "phase": "parse",
-        "code": "diagnosis_parse_failed",
-        "status": null
-      }
+      "finalValid": true,
+      "initialTop1": {
+        "hypothesisId": "h1",
+        "title": "探头物理1x但示波器通道误设10x导致读数虚高",
+        "priorScore": 50,
+        "hit": false
+      },
+      "finalTop1": {
+        "hypothesisId": "h1",
+        "title": "探头物理1x但示波器通道误设10x导致读数虚高",
+        "probability": 0.8696,
+        "hit": false
+      },
+      "idealAnswers": [
+        {
+          "questionId": "q1",
+          "optionIndex": 0
+        },
+        {
+          "questionId": "q2",
+          "optionIndex": 0
+        }
+      ],
+      "firstParseFeedback": "hypotheses: 必须包含 3~4 个假设",
+      "finalParseFeedback": null,
+      "error": null
     },
     {
       "id": "phy-02-sampling-alias",
       "source": "cases",
       "multimodal": false,
-      "durationMs": 26309,
-      "firstAttemptMs": 26308,
+      "durationMs": 10098,
+      "firstAttemptMs": 10098,
       "retryAttemptMs": null,
+      "rawJsonSyntaxValid": true,
+      "rawSchemaValid": true,
+      "rawSchemaIssues": [],
+      "rawStrictDeltaValid": false,
+      "repairedFirstPass": true,
+      "repairsApplied": [],
+      "scoreDeltaModified": false,
+      "diagnosedHypotheses": [
+        {
+          "id": "h1",
+          "title": "奈奎斯特采样定理违反导致频谱混叠",
+          "priorScore": 50
+        },
+        {
+          "id": "h2",
+          "title": "探头带宽限制引发高频衰减失真",
+          "priorScore": 30
+        },
+        {
+          "id": "h3",
+          "title": "信号源输出频率配置错误",
+          "priorScore": 20
+        }
+      ],
       "firstPass": true,
       "retried": false,
       "finalValid": true,
       "initialTop1": {
         "hypothesisId": "h1",
-        "title": "采样混叠导致频率误判",
+        "title": "奈奎斯特采样定理违反导致频谱混叠",
         "priorScore": 50,
         "hit": true
       },
       "finalTop1": {
         "hypothesisId": "h1",
-        "title": "采样混叠导致频率误判",
-        "probability": 0.5,
+        "title": "奈奎斯特采样定理违反导致频谱混叠",
+        "probability": 0.9091,
         "hit": true
       },
       "idealAnswers": [
         {
           "questionId": "q1",
-          "optionIndex": 1
+          "optionIndex": 0
         },
         {
           "questionId": "q2",
-          "optionIndex": 1
+          "optionIndex": 0
         }
       ],
       "firstParseFeedback": null,
@@ -454,32 +926,56 @@
       "id": "phy-03-missing-decoupling",
       "source": "cases",
       "multimodal": false,
-      "durationMs": 31009,
-      "firstAttemptMs": 31008,
+      "durationMs": 11423,
+      "firstAttemptMs": 11423,
       "retryAttemptMs": null,
+      "rawJsonSyntaxValid": true,
+      "rawSchemaValid": true,
+      "rawSchemaIssues": [],
+      "rawStrictDeltaValid": true,
+      "repairedFirstPass": true,
+      "repairsApplied": [],
+      "scoreDeltaModified": false,
+      "diagnosedHypotheses": [
+        {
+          "id": "h1",
+          "title": "MCU电源脚缺乏高频去耦电容",
+          "priorScore": 50
+        },
+        {
+          "id": "h2",
+          "title": "继电器线圈反电动势耦合至电源轨",
+          "priorScore": 30
+        },
+        {
+          "id": "h3",
+          "title": "探头接地弹簧引入测量伪影",
+          "priorScore": 20
+        }
+      ],
       "firstPass": true,
       "retried": false,
       "finalValid": true,
       "initialTop1": {
         "hypothesisId": "h1",
-        "title": "MCU电源引脚缺乏高频去耦导致共模噪声注入",
-        "priorScore": 45,
-        "hit": false
+        "title": "MCU电源脚缺乏高频去耦电容",
+        "priorScore": 50,
+        "hit": true
       },
       "finalTop1": {
-        "hypothesisId": "h2",
-        "title": "输入bulk电容ESR过高引发LC谐振",
-        "probability": 0.76,
-        "hit": false
+        "hypothesisId": "h1",
+        "title": "MCU电源脚缺乏高频去耦电容",
+        "probability": 0.6522,
+        "hit": true
       },
       "idealAnswers": [
         {
           "questionId": "q1",
-          "optionIndex": 1
+          "optionIndex": 0
         },
         {
           "questionId": "q2",
-          "optionIndex": 0
+          "optionIndex": 1
         }
       ],
       "firstParseFeedback": null,
@@ -490,22 +986,46 @@
       "id": "phy-04-missing-termination",
       "source": "cases",
       "multimodal": false,
-      "durationMs": 27123,
-      "firstAttemptMs": 27122,
+      "durationMs": 8200,
+      "firstAttemptMs": 8199,
       "retryAttemptMs": null,
+      "rawJsonSyntaxValid": true,
+      "rawSchemaValid": true,
+      "rawSchemaIssues": [],
+      "rawStrictDeltaValid": true,
+      "repairedFirstPass": true,
+      "repairsApplied": [],
+      "scoreDeltaModified": false,
+      "diagnosedHypotheses": [
+        {
+          "id": "h1",
+          "title": "探头高阻导致反射",
+          "priorScore": 50
+        },
+        {
+          "id": "h2",
+          "title": "接地弹簧电感效应",
+          "priorScore": 30
+        },
+        {
+          "id": "h3",
+          "title": "源端阻抗不连续",
+          "priorScore": 20
+        }
+      ],
       "firstPass": true,
       "retried": false,
       "finalValid": true,
       "initialTop1": {
         "hypothesisId": "h1",
-        "title": "负载端开路导致全反射",
-        "priorScore": 45,
+        "title": "探头高阻导致反射",
+        "priorScore": 50,
         "hit": true
       },
       "finalTop1": {
         "hypothesisId": "h1",
-        "title": "负载端开路导致全反射",
-        "probability": 0.875,
+        "title": "探头高阻导致反射",
+        "probability": 0.8696,
         "hit": true
       },
       "idealAnswers": [
@@ -515,7 +1035,7 @@
         },
         {
           "questionId": "q2",
-          "optionIndex": 1
+          "optionIndex": 0
         }
       ],
       "firstParseFeedback": null,
@@ -526,35 +1046,70 @@
       "id": "ai-training-nan",
       "source": "presets",
       "multimodal": true,
-      "durationMs": 31660,
-      "firstAttemptMs": 31659,
-      "retryAttemptMs": null,
-      "firstPass": true,
-      "retried": false,
+      "durationMs": 19008,
+      "firstAttemptMs": 7079,
+      "retryAttemptMs": 11928,
+      "rawJsonSyntaxValid": true,
+      "rawSchemaValid": false,
+      "rawSchemaIssues": [
+        {
+          "path": "hypotheses",
+          "message": "必须包含 3~4 个假设"
+        },
+        {
+          "path": "questions",
+          "message": "必须包含 2~3 道问题"
+        }
+      ],
+      "rawStrictDeltaValid": false,
+      "repairedFirstPass": false,
+      "repairsApplied": [
+        "priorScore_normalized"
+      ],
+      "scoreDeltaModified": false,
+      "diagnosedHypotheses": [
+        {
+          "id": "h1",
+          "title": "FP16溢出与无裁剪致梯度爆炸",
+          "priorScore": 55
+        },
+        {
+          "id": "h2",
+          "title": "固定数据顺序触发特定样本异常",
+          "priorScore": 30
+        },
+        {
+          "id": "h3",
+          "title": "学习率过大导致优化器发散",
+          "priorScore": 15
+        }
+      ],
+      "firstPass": false,
+      "retried": true,
       "finalValid": true,
       "initialTop1": {
         "hypothesisId": "h1",
-        "title": "FP16下数值溢出引发梯度爆炸",
-        "priorScore": 45,
+        "title": "FP16溢出与无裁剪致梯度爆炸",
+        "priorScore": 55,
         "hit": true
       },
       "finalTop1": {
         "hypothesisId": "h1",
-        "title": "FP16下数值溢出引发梯度爆炸",
+        "title": "FP16溢出与无裁剪致梯度爆炸",
         "probability": 0.913,
         "hit": true
       },
       "idealAnswers": [
         {
           "questionId": "q1",
-          "optionIndex": 1
+          "optionIndex": 0
         },
         {
           "questionId": "q2",
-          "optionIndex": 0
+          "optionIndex": 1
         }
       ],
-      "firstParseFeedback": null,
+      "firstParseFeedback": "hypotheses: 必须包含 3~4 个假设；questions: 必须包含 2~3 道问题",
       "finalParseFeedback": null,
       "error": null
     },
@@ -562,28 +1117,52 @@
       "id": "gel-electrophoresis-smearing",
       "source": "presets",
       "multimodal": true,
-      "durationMs": 33383,
-      "firstAttemptMs": 33382,
+      "durationMs": 12683,
+      "firstAttemptMs": 12682,
       "retryAttemptMs": null,
+      "rawJsonSyntaxValid": true,
+      "rawSchemaValid": true,
+      "rawSchemaIssues": [],
+      "rawStrictDeltaValid": false,
+      "repairedFirstPass": true,
+      "repairsApplied": [],
+      "scoreDeltaModified": false,
+      "diagnosedHypotheses": [
+        {
+          "id": "h1",
+          "title": "DNA超负荷导致凝胶阻滞",
+          "priorScore": 55
+        },
+        {
+          "id": "h2",
+          "title": "电压过高致焦耳热",
+          "priorScore": 30
+        },
+        {
+          "id": "h3",
+          "title": "染料饱和假象",
+          "priorScore": 15
+        }
+      ],
       "firstPass": true,
       "retried": false,
       "finalValid": true,
       "initialTop1": {
         "hypothesisId": "h1",
-        "title": "过载导致凝胶孔堵塞与局部电场畸变",
-        "priorScore": 45,
+        "title": "DNA超负荷导致凝胶阻滞",
+        "priorScore": 55,
         "hit": true
       },
       "finalTop1": {
         "hypothesisId": "h1",
-        "title": "过载导致凝胶孔堵塞与局部电场畸变",
-        "probability": 0.75,
+        "title": "DNA超负荷导致凝胶阻滞",
+        "probability": 0.8077,
         "hit": true
       },
       "idealAnswers": [
         {
           "questionId": "q1",
-          "optionIndex": 0
+          "optionIndex": 1
         },
         {
           "questionId": "q2",
@@ -598,22 +1177,46 @@
       "id": "oscilloscope-ringing",
       "source": "presets",
       "multimodal": true,
-      "durationMs": 33891,
-      "firstAttemptMs": 33890,
+      "durationMs": 12775,
+      "firstAttemptMs": 12773,
       "retryAttemptMs": null,
+      "rawJsonSyntaxValid": true,
+      "rawSchemaValid": true,
+      "rawSchemaIssues": [],
+      "rawStrictDeltaValid": true,
+      "repairedFirstPass": true,
+      "repairsApplied": [],
+      "scoreDeltaModified": false,
+      "diagnosedHypotheses": [
+        {
+          "id": "h1",
+          "title": "长接地引线电感引发谐振",
+          "priorScore": 50
+        },
+        {
+          "id": "h2",
+          "title": "阻抗失配导致信号反射",
+          "priorScore": 30
+        },
+        {
+          "id": "h3",
+          "title": "示波器带宽限制不足",
+          "priorScore": 20
+        }
+      ],
       "firstPass": true,
       "retried": false,
       "finalValid": true,
       "initialTop1": {
         "hypothesisId": "h1",
-        "title": "长接地引线引入显著寄生电感，与探头/电路容性形成欠阻尼LC谐振",
-        "priorScore": 45,
+        "title": "长接地引线电感引发谐振",
+        "priorScore": 50,
         "hit": true
       },
       "finalTop1": {
         "hypothesisId": "h1",
-        "title": "长接地引线引入显著寄生电感，与探头/电路容性形成欠阻尼LC谐振",
-        "probability": 0.625,
+        "title": "长接地引线电感引发谐振",
+        "probability": 0.9091,
         "hit": true
       },
       "idealAnswers": [

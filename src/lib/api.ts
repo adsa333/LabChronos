@@ -74,7 +74,7 @@ function isQuestion(value: unknown, hypothesisIds: string[]): value is Question 
   return isNonEmptyString(value.id) && isNonEmptyString(value.prompt) && isNonEmptyString(value.howToCheck) &&
     options.slice(0, -1).every((option) => {
       const deltas = Object.values((option as QuestionOption).scoreDelta);
-      return deltas.some((delta) => delta > 0) && deltas.some((delta) => delta < 0);
+      return deltas.some((delta) => delta !== 0);
     });
 }
 
