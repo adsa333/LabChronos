@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
-import { Check, CircleHelp, FlaskConical, Lock, RotateCcw } from 'lucide-react'
+import { Archive, Check, CircleHelp, Download, FlaskConical, Lock, RotateCcw } from 'lucide-react'
 import type { Answers, HypothesisScore } from '../lib/scoring'
 import type { DiagnosisResult } from '../types/diagnosis'
 import PanelHeader from './PanelHeader'
@@ -13,9 +13,14 @@ interface TriagePanelProps {
   onAnswer: (questionId: string, optionIndex: number) => void
   onManualLock: () => void
   onReset: () => void
+  onExportRecap: () => void
+  onSaveToVault: () => void
+  vaulted: boolean
+  vaultError?: string | null
+  recapBusy: boolean
 }
 
-export default function TriagePanel({ diagnosis, answers, scores, lockedId, onAnswer, onManualLock, onReset }: TriagePanelProps) {
+export default function TriagePanel({ diagnosis, answers, scores, lockedId, onAnswer, onManualLock, onReset, onExportRecap, onSaveToVault, vaulted, vaultError, recapBusy }: TriagePanelProps) {
   const answeredCount = Object.keys(answers).length
   const lockedHypothesis = lockedId ? diagnosis.hypotheses.find((hypothesis) => hypothesis.id === lockedId) : undefined
   const lockedScore = lockedId ? scores.find((score) => score.id === lockedId) : undefined
@@ -45,7 +50,28 @@ export default function TriagePanel({ diagnosis, answers, scores, lockedId, onAn
           <span>p &lt; 15% 剪枝 · p ≥ 60% 锁定</span>
         </div>
 
-        {diagnosis.questions.map((question, questionIndex) => (
+        {lockedId && (
+          <details className="rounded-md border border-line bg-bg/60 px-3 py-2">
+            <summary className="cursor-pointer font-mono text-[10px] text-ink-muted">
+              排查记录 · 展开查看作答路径
+            </summary>
+            <ul className="mt-2 space-y-2">
+              {diagnosis.questions.map((question, questionIndex) => {
+                const optionIndex = answers[question.id]
+                const option = optionIndex === undefined ? null : question.options[optionIndex]
+                return (
+                  <li key={question.id} className="text-[11px] leading-4 text-ink-muted">
+                    <span className="mr-1.5 font-mono text-pruned">Q{questionIndex + 1}</span>
+                    {question.prompt}
+                    <div className={option ? 'mt-0.5 text-ink' : 'mt-0.5 text-pruned'}>{option ? option.label : '未作答'}</div>
+                  </li>
+                )
+              })}
+            </ul>
+          </details>
+        )}
+
+        {!lockedId && diagnosis.questions.map((question, questionIndex) => (
           <article key={question.id} className="rounded-md border border-line bg-bg/60 p-3">
             <div className="mb-2 flex items-center gap-2 font-mono text-[9px] tracking-[0.14em] text-suspect">
               <CircleHelp size={14} />QUESTION {String(questionIndex + 1).padStart(2, '0')}
@@ -97,6 +123,16 @@ export default function TriagePanel({ diagnosis, answers, scores, lockedId, onAn
             <h3 className="mt-2 text-sm font-semibold leading-6 text-ink">{lockedHypothesis.title}</h3>
             <div className="mt-1 font-mono text-lg text-truth">{(lockedScore.probability * 100).toFixed(1)}%</div>
             <p className="mt-2 text-[11px] leading-5 text-ink-muted">{lockedHypothesis.mechanism}</p>
+
+            <div className="mt-3 flex gap-2">
+              <button type="button" onClick={onExportRecap} disabled={recapBusy} className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-truth/40 bg-truth/10 px-2 py-2 text-[11px] text-truth hover:bg-truth/15 disabled:cursor-not-allowed disabled:border-line disabled:bg-line disabled:text-pruned">
+                <Download size={13} />{recapBusy ? '渲染中…' : '导出复盘卡'}
+              </button>
+              <button type="button" onClick={onSaveToVault} disabled={vaulted} className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-line bg-panel px-2 py-2 text-[11px] text-ink-muted hover:border-truth/40 hover:text-truth disabled:cursor-not-allowed disabled:text-pruned">
+                <Archive size={13} />{vaulted ? '已存入' : '存入博物馆'}
+              </button>
+            </div>
+            {vaultError && <p className="mt-2 text-[10px] leading-4 text-suspect">{vaultError}</p>}
 
             <div className="mt-4 border-t border-line pt-3">
               <div className="mb-2 flex items-center gap-2 text-xs text-ink">

@@ -5,7 +5,7 @@ import { compressImage } from './api'
 const STORAGE_KEY = 'labchronos.customCase.v1'
 const DB_NAME = 'labchronos'
 const STORE_NAME = 'images'
-const DB_VERSION = 1
+const DB_VERSION = 2
 
 export interface CustomCaseRecord {
   id: string
@@ -40,7 +40,7 @@ function readRecord(): CustomCaseRecord | null {
   }
 }
 
-function openDatabase(): Promise<IDBDatabase> {
+export function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
     if (!('indexedDB' in window)) {
       reject(new Error('IndexedDB unavailable'))
@@ -50,6 +50,7 @@ function openDatabase(): Promise<IDBDatabase> {
     request.onupgradeneeded = () => {
       const database = request.result
       if (!database.objectStoreNames.contains(STORE_NAME)) database.createObjectStore(STORE_NAME)
+      if (!database.objectStoreNames.contains('vault')) database.createObjectStore('vault', { keyPath: 'id' })
     }
     request.onsuccess = () => resolve(request.result)
     request.onerror = () => reject(request.error)
@@ -57,7 +58,7 @@ function openDatabase(): Promise<IDBDatabase> {
 }
 
 async function writeImage(id: string, blob: Blob) {
-  const database = await openDatabase()
+  const database = await openDb()
   try {
     await new Promise<void>((resolve, reject) => {
       const transaction = database.transaction(STORE_NAME, 'readwrite')
@@ -72,7 +73,7 @@ async function writeImage(id: string, blob: Blob) {
 }
 
 async function readImage(id: string): Promise<Blob | null> {
-  const database = await openDatabase()
+  const database = await openDb()
   try {
     return await new Promise<Blob | null>((resolve, reject) => {
       const request = database.transaction(STORE_NAME, 'readonly').objectStore(STORE_NAME).get(id)
@@ -85,7 +86,7 @@ async function readImage(id: string): Promise<Blob | null> {
 }
 
 async function removeImage(id: string) {
-  const database = await openDatabase()
+  const database = await openDb()
   try {
     await new Promise<void>((resolve, reject) => {
       const transaction = database.transaction(STORE_NAME, 'readwrite')

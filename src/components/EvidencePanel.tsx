@@ -5,9 +5,10 @@ import PanelHeader from './PanelHeader'
 
 interface EvidencePanelProps {
   preset: PresetCase
+  synthetic?: boolean
 }
 
-export default function EvidencePanel({ preset }: EvidencePanelProps) {
+export default function EvidencePanel({ preset, synthetic = true }: EvidencePanelProps) {
   const [activeTab, setActiveTab] = useState<'log' | 'conditions'>('log')
   const [activeId, setActiveId] = useState<string | null>(() => preset.diagnosis.observedSymptoms.find((symptom) => symptom.bbox)?.id ?? null)
   const activeSymptom = preset.diagnosis.observedSymptoms.find((symptom) => symptom.id === activeId)
@@ -24,7 +25,7 @@ export default function EvidencePanel({ preset }: EvidencePanelProps) {
               <ImageIcon size={14} />
               <span>失败图片</span>
             </div>
-            <span className="font-mono text-[9px] tracking-wider text-pruned">SYNTHETIC EVIDENCE</span>
+            <span className="font-mono text-[9px] tracking-wider text-pruned">{synthetic ? 'SYNTHETIC EVIDENCE' : 'UPLOADED EVIDENCE'}</span>
           </div>
           <div className="flex justify-center bg-black/25 p-2">
             {preset.image ? (

@@ -4,12 +4,17 @@ import CausalTree from '../components/CausalTree'
 import DiagnoseDialog from '../components/DiagnoseDialog'
 import EvidencePanel from '../components/EvidencePanel'
 import PanelHeader from '../components/PanelHeader'
+import RecapCardPreview from '../components/RecapCardPreview'
 import TriagePanel from '../components/TriagePanel'
+import VaultMuseum from '../components/VaultMuseum'
 import { presets } from '../data/presets'
 import type { PresetCase } from '../data/presets'
 import { deleteCustomCase, loadCustomCase, saveCustomCase } from '../lib/caseStorage'
+import { downloadRecapCard, renderRecapCard } from '../lib/recapCard'
 import { getAutomaticLockId, getLeadingHypothesis, getPrunedIds, scoreHypotheses } from '../lib/scoring'
 import type { Answers } from '../lib/scoring'
+import { deleteVaultEntry, listVaultEntries, saveVaultEntry } from '../lib/vaultStorage'
+import type { VaultEntry } from '../lib/vaultStorage'
 import type { DiagnosisResult } from '../types/diagnosis'
 
 export default function Workbench() {
@@ -18,7 +23,17 @@ export default function Workbench() {
   const [manualLockId, setManualLockId] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
   const [customCase, setCustomCase] = useState<PresetCase | null>(null)
+  const [museumOpen, setMuseumOpen] = useState(false)
+  const [recapUrl, setRecapUrl] = useState<string | null>(null)
+  const [recapBusy, setRecapBusy] = useState(false)
+  const [recapSaved, setRecapSaved] = useState(false)
+  const [vaultNote, setVaultNote] = useState<string | null>(null)
+  const [vaultEntries, setVaultEntries] = useState<VaultEntry[]>([])
   const [customCaseLoad] = useState(loadCustomCase)
+  const recapUrlRef = useRef<string | null>(null)
+  const recapBlobRef = useRef<Blob | null>(null)
+  const recapExportedAtRef = useRef(0)
+  const recapRequestRef = useRef(0)
   const customCreatedAtRef = useRef(0)
   const customHasImageRef = useRef(false)
   const customCaseTouchedRef = useRef(false)
@@ -66,6 +81,16 @@ export default function Workbench() {
     }
   }, [])
 
+  useEffect(() => {
+    void listVaultEntries().then(setVaultEntries)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      if (recapUrlRef.current) URL.revokeObjectURL(recapUrlRef.current)
+    }
+  }, [])
+
   function scheduleAnswersSave(nextAnswers: Answers) {
     if (!customCase) return
     window.clearTimeout(answersSaveTimerRef.current)
@@ -86,6 +111,8 @@ export default function Workbench() {
     setActiveCaseId(caseId)
     setAnswers({})
     setManualLockId(null)
+    setRecapSaved(false)
+    setVaultNote(null)
   }
 
   function answerQuestion(questionId: string, optionIndex: number) {
@@ -93,12 +120,14 @@ export default function Workbench() {
     setAnswers(nextAnswers)
     if (customCase) scheduleAnswersSave(nextAnswers)
     setManualLockId(null)
+    setRecapSaved(false)
   }
 
   function resetAnswers() {
     setAnswers({})
     if (customCase) scheduleAnswersSave({})
     setManualLockId(null)
+    setRecapSaved(false)
   }
 
   function handleDiagnoseSuccess(diagnosis: DiagnosisResult, imageFile?: File, logText?: string) {
@@ -116,6 +145,7 @@ export default function Workbench() {
     setActiveCaseId(id)
     setAnswers({})
     setManualLockId(null)
+    setRecapSaved(false)
     setDialogOpen(false)
   }
 
@@ -128,6 +158,121 @@ export default function Workbench() {
     }
     setCustomCase(null)
     selectCase(presets[0].id)
+  }
+
+  async function getActiveImageBlob(): Promise<Blob | null> {
+    if (!activeCase.image) return null
+    try {
+      const response = await fetch(activeCase.image)
+      return response.ok ? await response.blob() : null
+    } catch {
+      return null
+    }
+  }
+
+  async function buildRecap() {
+    if (!lockedId || recapBusy) return
+    const request = ++recapRequestRef.current
+    setRecapBusy(true)
+    setRecapSaved(false)
+    try {
+      const image = await getActiveImageBlob()
+      const exportedAt = Date.now()
+      const blob = await renderRecapCard({ diagnosis, scores, lockedId, answers, image, exportedAt })
+      if (recapRequestRef.current !== request) return
+      if (recapUrlRef.current) URL.revokeObjectURL(recapUrlRef.current)
+      const url = URL.createObjectURL(blob)
+      recapUrlRef.current = url
+      recapBlobRef.current = blob
+      recapExportedAtRef.current = exportedAt
+      setRecapUrl(url)
+    } catch {} finally {
+      if (recapRequestRef.current === request) setRecapBusy(false)
+    }
+  }
+
+  function closeRecap() {
+    recapRequestRef.current += 1
+    if (recapUrlRef.current) {
+      URL.revokeObjectURL(recapUrlRef.current)
+      recapUrlRef.current = null
+    }
+    recapBlobRef.current = null
+    setRecapUrl(null)
+    setRecapBusy(false)
+    setRecapSaved(false)
+  }
+
+  function downloadRecap() {
+    if (recapBlobRef.current) downloadRecapCard(recapBlobRef.current, recapExportedAtRef.current)
+  }
+
+  async function saveToVault() {
+    if (!lockedId) return
+    const hypothesis = diagnosis.hypotheses.find((item) => item.id === lockedId)
+    const score = scores.find((item) => item.id === lockedId)
+    const image = await getActiveImageBlob()
+    const createdAt = Date.now()
+    const result = await saveVaultEntry({
+      id: `vault-${createdAt}`,
+      createdAt,
+      title: diagnosis.caseTitle,
+      domain: diagnosis.domain,
+      truthTitle: hypothesis?.title ?? '',
+      probability: score?.probability ?? 0,
+      symptomSummary: diagnosis.observedSymptoms.find((item) => item.severity === 'critical')?.label ?? '',
+      log: activeCase.log,
+      answers,
+      diagnosis,
+      image,
+      thumb: null,
+    })
+    if (result.ok) {
+      setVaultNote(null)
+      setRecapSaved(true)
+      setVaultEntries(await listVaultEntries())
+    } else {
+      setVaultNote(result.code === 'QUOTA' ? '本机存储空间不足，未能存证' : '本机存储不可用，未能存证')
+    }
+  }
+
+  async function openMuseum() {
+    setMuseumOpen(true)
+    setVaultEntries(await listVaultEntries())
+  }
+
+  function closeMuseum() {
+    setMuseumOpen(false)
+  }
+
+  function startDiagnosisFromMuseum() {
+    setMuseumOpen(false)
+    setDialogOpen(true)
+  }
+
+  async function handleDeleteVault(id: string) {
+    await deleteVaultEntry(id)
+    setVaultEntries(await listVaultEntries())
+  }
+
+  function restoreVault(entry: VaultEntry) {
+    customCaseTouchedRef.current = true
+    customCreatedAtRef.current = entry.createdAt
+    customHasImageRef.current = Boolean(entry.image)
+    setCustomCase({
+      id: entry.id,
+      label: '自定义诊断',
+      diagnosis: entry.diagnosis,
+      image: entry.image ? URL.createObjectURL(entry.image) : '',
+      log: entry.log,
+      conditions: '',
+    })
+    setActiveCaseId(entry.id)
+    setAnswers(entry.answers)
+    setManualLockId(null)
+    setRecapSaved(false)
+    setVaultNote(null)
+    setMuseumOpen(false)
   }
 
   return (
@@ -197,14 +342,17 @@ export default function Workbench() {
           <button type="button" onClick={() => setDialogOpen(true)} className="flex h-8 items-center gap-1.5 rounded-md border border-truth/40 bg-truth/10 px-3 text-xs text-truth hover:bg-truth/15">
             <Plus size={14} />新建诊断
           </button>
-          <button type="button" disabled className="flex h-8 items-center gap-1.5 rounded-md border border-line bg-panel px-3 text-xs text-ink-muted/50 disabled:cursor-not-allowed">
+          <button type="button" onClick={() => void openMuseum()} className="flex h-8 items-center gap-1.5 rounded-md border border-line bg-panel px-3 text-xs text-ink-muted hover:border-truth/40 hover:text-truth">
             <Archive size={14} />翻车博物馆
+            {vaultEntries.length > 0 && (
+              <span className="rounded bg-truth/15 px-1.5 py-px font-mono text-[9px] text-truth">{vaultEntries.length}</span>
+            )}
           </button>
         </div>
       </header>
 
       <main className="grid h-[calc(100vh-56px)] grid-cols-[300px_minmax(0,1fr)_380px] gap-3 p-3">
-        <EvidencePanel preset={activeCase} />
+        <EvidencePanel key={activeCase.id} preset={activeCase} synthetic={presets.some((preset) => preset.id === activeCase.id)} />
         <section className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-line bg-panel">
           <PanelHeader index="02" title={activeCase.label} english="CAUSAL TREE" />
           {diagnosis.confidenceNote && (
@@ -222,7 +370,7 @@ export default function Workbench() {
             />
           </div>
           <div className="flex h-8 shrink-0 items-center justify-between border-t border-line px-3 font-mono text-[9px] text-ink-muted">
-            <span>{lockedId ? `${lockedId} 已锁定 · 可重置后尝试其他路径` : '回答右侧问题，实时重算概率并剪枝'}</span>
+            <span>{lockedId ? `${lockedId.toUpperCase()} 已锁定 · 可重置后尝试其他路径` : '回答右侧问题，实时重算概率并剪枝'}</span>
             <span className="text-pruned">ROOT → HYPOTHESES → SUB-CAUSES</span>
           </div>
         </section>
@@ -234,9 +382,31 @@ export default function Workbench() {
           onAnswer={answerQuestion}
           onManualLock={() => setManualLockId(getLeadingHypothesis(scores).id)}
           onReset={resetAnswers}
+          onExportRecap={() => void buildRecap()}
+          onSaveToVault={() => void saveToVault()}
+          vaulted={recapSaved}
+          vaultError={vaultNote}
+          recapBusy={recapBusy}
         />
       </main>
       <DiagnoseDialog open={dialogOpen} onClose={() => setDialogOpen(false)} onSuccess={handleDiagnoseSuccess} />
+      <RecapCardPreview
+        open={recapBusy || recapUrl !== null}
+        url={recapUrl}
+        busy={recapBusy}
+        onClose={closeRecap}
+        onDownload={downloadRecap}
+        onSaveToVault={() => void saveToVault()}
+        saved={recapSaved}
+      />
+      <VaultMuseum
+        open={museumOpen}
+        entries={vaultEntries}
+        onClose={closeMuseum}
+        onRestore={restoreVault}
+        onDelete={(id) => void handleDeleteVault(id)}
+        onStartDiagnosis={startDiagnosisFromMuseum}
+      />
     </div>
   )
 }
