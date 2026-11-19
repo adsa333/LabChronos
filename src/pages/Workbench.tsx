@@ -140,7 +140,7 @@ export default function Workbench() {
           <div>
             <div className="flex items-center gap-2">
               <span className="font-mono text-base font-bold tracking-tight text-ink">LabChronos</span>
-              <span className="rounded border border-truth/40 bg-truth/10 px-1.5 py-px font-mono text-[10px] text-truth">M1</span>
+              <span className="rounded border border-truth/40 bg-truth/10 px-1.5 py-px font-mono text-[10px] text-truth">M2</span>
             </div>
             <p className="mt-0.5 text-[10px] tracking-wide text-ink-muted">实验失败取证 <span className="text-pruned">·</span> Failure Forensics</p>
           </div>
