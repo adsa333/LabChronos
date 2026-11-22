@@ -1,137 +1,202 @@
-import { useState } from 'react'
-import { ClipboardList, FileText, Image as ImageIcon, Table2 } from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { ClipboardList, FileText, Image as ImageIcon, Table2, X } from 'lucide-react'
 import type { PresetCase } from '../data/presets'
-import PanelHeader from './PanelHeader'
 
 interface EvidencePanelProps {
   preset: PresetCase
-  synthetic?: boolean
 }
 
-export default function EvidencePanel({ preset, synthetic = true }: EvidencePanelProps) {
-  const [activeTab, setActiveTab] = useState<'log' | 'conditions'>('log')
-  const [activeId, setActiveId] = useState<string | null>(() => preset.diagnosis.observedSymptoms.find((symptom) => symptom.bbox)?.id ?? null)
-  const activeSymptom = preset.diagnosis.observedSymptoms.find((symptom) => symptom.id === activeId)
+type EvidenceTab = 'symptoms' | 'log' | 'conditions'
+
+function parseKeyValues(log: string): [string, string][] {
+  const rows: [string, string][] = []
+  log.split(/\r?\n/).forEach((line) => {
+    const match = line.match(/([A-Za-z0-9_]+)\s*=\s*([^=]+)$/)
+    if (match) rows.push([match[1], match[2].trim()])
+  })
+  return rows
+}
+
+export default function EvidencePanel({ preset }: EvidencePanelProps) {
+  const [tab, setTab] = useState<EvidenceTab>('symptoms')
+  const [activeId, setActiveId] = useState<string | null>(() => preset.diagnosis.observedSymptoms.find((item) => item.bbox)?.id ?? null)
+  const [lightbox, setLightbox] = useState(false)
+  const activeSymptom = preset.diagnosis.observedSymptoms.find((item) => item.id === activeId)
   const activeBBox = activeSymptom?.bbox
-  const conditionRows = preset.conditions.trim().split(/\r?\n/).map((line) => line.split(','))
+  const isCustom = preset.id.startsWith('custom-') || preset.id.startsWith('vault-')
+  const keyValues = useMemo(() => parseKeyValues(preset.log), [preset.log])
+  const conditionRows = preset.conditions.trim()
+    ? preset.conditions.trim().split(/\r?\n/).map((line) => line.split(','))
+    : keyValues.length > 0
+      ? [['KEY', 'VALUE'], ...keyValues]
+      : []
+
+  const bboxOverlay = activeBBox && (
+    <div
+      className="pointer-events-none absolute border-2 transition-opacity duration-150"
+      style={{
+        borderColor: 'var(--seal)',
+        background: 'var(--seal-soft)',
+        left: `${activeBBox[0] * 100}%`,
+        top: `${activeBBox[1] * 100}%`,
+        width: `${activeBBox[2] * 100}%`,
+        height: `${activeBBox[3] * 100}%`,
+      }}
+    >
+      <span className="absolute -left-0.5 -top-0.5 h-2 w-2 border-l-2 border-t-2" style={{ borderColor: 'var(--seal)' }} />
+      <span className="absolute -right-0.5 -top-0.5 h-2 w-2 border-r-2 border-t-2" style={{ borderColor: 'var(--seal)' }} />
+      <span className="absolute -bottom-0.5 -left-0.5 h-2 w-2 border-b-2 border-l-2" style={{ borderColor: 'var(--seal)' }} />
+      <span className="absolute -bottom-0.5 -right-0.5 h-2 w-2 border-b-2 border-r-2" style={{ borderColor: 'var(--seal)' }} />
+    </div>
+  )
 
   return (
-    <section className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-line bg-panel">
-      <PanelHeader index="01" title="取证区" english="EVIDENCE" />
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
-        <div className="overflow-hidden rounded-md border border-line bg-bg/70">
-          <div className="flex h-9 items-center justify-between border-b border-line px-3">
-            <div className="flex items-center gap-2 text-xs text-ink-muted">
-              <ImageIcon size={14} />
-              <span>失败图片</span>
-            </div>
-            <span className="font-mono text-[9px] tracking-wider text-pruned">{synthetic ? 'SYNTHETIC EVIDENCE' : 'UPLOADED EVIDENCE'}</span>
+    <section className="flex min-h-0 flex-col border-r-[1.5px] rule-strong-border surface-folio">
+      <div className="section-bar flex h-12 shrink-0 items-center justify-between px-4">
+        <h2 className="font-display text-sm font-semibold text-main">I · 实验取证</h2>
+        <span className="font-mono-tab text-[10px] tracking-[0.16em] text-aux">EVIDENCE FOLIO</span>
+      </div>
+
+      <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4 pb-16">
+        <p className="text-xs leading-5 text-sub">客观记录失败现象，不先把猜测写成事实。</p>
+        {isCustom && (
+          <div className="border rule-border seal-soft-bg px-3 py-2 text-[11px] leading-5 seal-text">
+            科学边界：{preset.diagnosis.confidenceNote ?? '当前为本地推演结果，接入真实模型后将依据你的截图重新分析。'}
           </div>
-          <div className="flex justify-center bg-black/25 p-2">
-            {preset.image ? (
-              <div className="relative inline-block">
-                <img
-                  src={preset.image}
-                  alt={preset.diagnosis.caseTitle}
-                  className="block max-h-[280px] w-auto max-w-full rounded"
-                />
-                {activeBBox && (
-                  <div
-                    className="pointer-events-none absolute rounded-sm border-2 border-suspect bg-suspect/10 transition-opacity duration-150"
-                    style={{
-                      left: `${activeBBox[0] * 100}%`,
-                      top: `${activeBBox[1] * 100}%`,
-                      width: `${activeBBox[2] * 100}%`,
-                      height: `${activeBBox[3] * 100}%`,
-                    }}
-                  >
-                    <span className="absolute -left-0.5 -top-0.5 h-3 w-3 border-l-2 border-t-2 border-suspect" />
-                    <span className="absolute -right-0.5 -top-0.5 h-3 w-3 border-r-2 border-t-2 border-suspect" />
-                    <span className="absolute -bottom-0.5 -left-0.5 h-3 w-3 border-b-2 border-l-2 border-suspect" />
-                    <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 border-b-2 border-r-2 border-suspect" />
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="px-4 py-16 text-xs text-pruned">未提供实验截图</div>
-            )}
+        )}
+
+        <div className="grid grid-cols-3 gap-2">
+          <div className="folio-card p-3">
+            <p className="font-display text-2xl text-main">{preset.diagnosis.observedSymptoms.length}</p>
+            <p className="mt-1 text-[10px] text-aux">观测症状</p>
+          </div>
+          <div className="folio-card p-3">
+            <p className="font-display text-2xl text-main">{preset.diagnosis.questions.length}</p>
+            <p className="mt-1 text-[10px] text-aux">鉴别追问</p>
+          </div>
+          <div className="folio-card p-3">
+            <p className="font-display text-lg teal-text">{preset.diagnosis.domain}</p>
+            <p className="mt-1 text-[10px] text-aux">学科领域</p>
           </div>
         </div>
 
-        <div className="flex h-[255px] flex-col overflow-hidden rounded-md border border-line bg-bg/70">
-          <div className="flex h-9 shrink-0 items-center justify-between border-b border-line px-2">
-            <div className="flex gap-1">
-              <button
-                type="button"
-                onClick={() => setActiveTab('log')}
-                className={`flex items-center gap-1.5 rounded px-2 py-1 text-[11px] ${activeTab === 'log' ? 'bg-truth/10 text-truth' : 'text-ink-muted hover:text-ink'}`}
-              >
-                <FileText size={13} />日志片段
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveTab('conditions')}
-                className={`flex items-center gap-1.5 rounded px-2 py-1 text-[11px] ${activeTab === 'conditions' ? 'bg-truth/10 text-truth' : 'text-ink-muted hover:text-ink'}`}
-              >
-                <Table2 size={13} />条件表
+        <div className="plate-box folio-card p-3">
+          <span className="plate-corner left-0 top-0 border-l-[1.5px] border-t-[1.5px]" />
+          <span className="plate-corner right-0 top-0 border-r-[1.5px] border-t-[1.5px]" />
+          <span className="plate-corner bottom-0 left-0 border-b-[1.5px] border-l-[1.5px]" />
+          <span className="plate-corner bottom-0 right-0 border-b-[1.5px] border-r-[1.5px]" />
+          <div className="mb-2 flex items-center justify-between">
+            <span className="flex items-center gap-2 text-xs text-sub"><ImageIcon size={13} />图版 I</span>
+            <span className="font-mono-tab text-[9px] text-aux">PLATE I</span>
+          </div>
+          {preset.image ? (
+            <div className="flex justify-center surface-tint p-2">
+              <button type="button" onClick={() => setLightbox(true)} className="relative inline-block cursor-zoom-in">
+                <img src={preset.image} alt={preset.diagnosis.caseTitle} className="block max-h-[320px] w-auto max-w-full" />
+                {bboxOverlay}
               </button>
             </div>
-            <span className="font-mono text-[9px] text-pruned">{activeTab === 'log' ? 'LOG' : 'CSV'}</span>
-          </div>
-          {activeTab === 'log' ? (
-            preset.log.trim() ? (
-              <pre className="min-h-0 flex-1 overflow-auto p-3 font-mono text-[9px] leading-[1.65] text-ink-muted">{preset.log}</pre>
-            ) : (
-              <div className="flex min-h-0 flex-1 items-center justify-center text-xs text-pruned">未提供实验日志</div>
-            )
-          ) : preset.conditions.trim() ? (
-            <div className="min-h-0 flex-1 overflow-auto">
-              <table className="w-full border-collapse text-[10px]">
-                <thead className="sticky top-0 bg-bg text-ink-muted">
-                  <tr>
-                    {conditionRows[0].map((cell) => <th key={cell} className="border-b border-line px-2 py-2 text-left font-medium">{cell}</th>)}
-                  </tr>
-                </thead>
-                <tbody>
-                  {conditionRows.slice(1).map((row, rowIndex) => (
-                    <tr key={`${row[0]}-${rowIndex}`} className="border-b border-line/60 last:border-0">
-                      {row.map((cell, cellIndex) => (
-                        <td key={`${cellIndex}-${cell}`} className={`px-2 py-1.5 align-top ${cellIndex === 2 ? 'text-ink' : 'text-ink-muted'}`}>{cell}</td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+          ) : conditionRows.length > 0 ? (
+            <div className="grid grid-cols-2 gap-2 surface-tint p-3">
+              {conditionRows.slice(0, 12).map((row, index) => (
+                <div key={`${row[0]}-${index}`} className="border rule-border surface-plate px-2 py-1.5">
+                  <p className="font-mono-tab text-[9px] text-aux">{row[0]}</p>
+                  <p className="mt-0.5 break-words font-mono-tab text-[11px] text-main">{row[1]}</p>
+                </div>
+              ))}
             </div>
           ) : (
-            <div className="flex min-h-0 flex-1 items-center justify-center text-xs text-pruned">该病例未提供条件表</div>
+            <div className="flex h-40 items-center justify-center border border-dashed rule-border surface-tint font-mono-tab text-xs text-aux">
+              NO IMAGE
+            </div>
           )}
         </div>
 
-        <div>
-          <div className="mb-2 flex items-center gap-2 px-1 text-xs text-ink-muted">
-            <ClipboardList size={14} />
-            <span>症状卡片</span>
-            <span className="ml-auto font-mono text-[9px] text-pruned">{preset.diagnosis.observedSymptoms.length} OBSERVED</span>
-          </div>
-          <div className="space-y-2">
-            {preset.diagnosis.observedSymptoms.map((symptom) => (
-              <article
-                key={symptom.id}
-                onClick={() => setActiveId(symptom.id)}
-                className={`cursor-pointer rounded-md border bg-bg/60 p-3 ${activeId === symptom.id ? 'border-suspect' : symptom.severity === 'critical' ? 'border-red-400/30' : 'border-suspect/25'}`}
+        <div className="folio-card">
+          <div className="flex border-b rule-border">
+            {([
+              ['symptoms', '观测症状', ClipboardList],
+              ['log', '原始日志', FileText],
+              ['conditions', '条件表', Table2],
+            ] as const).map(([key, label, Icon]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setTab(key)}
+                className={`flex flex-1 items-center justify-center gap-1.5 px-2 py-2 text-[11px] ${tab === key ? 'seal-soft-bg seal-text' : 'text-sub hover:text-main'}`}
               >
-                <div className="mb-1.5 flex items-center justify-between gap-2">
-                  <span className={`font-mono text-[9px] uppercase ${symptom.severity === 'critical' ? 'text-red-300' : 'text-suspect'}`}>{symptom.id} · {symptom.severity}</span>
-                  <span className="rounded border border-line px-1.5 py-0.5 font-mono text-[9px] text-ink-muted">{symptom.source}</span>
-                </div>
-                <h3 className="text-xs font-medium leading-5 text-ink">{symptom.label}</h3>
-                <p className="mt-1 text-[10px] leading-4 text-ink-muted">{symptom.detail}</p>
-              </article>
+                <Icon size={12} />{label}
+              </button>
             ))}
+          </div>
+          <div className="max-h-[320px] overflow-y-auto p-3">
+            {tab === 'symptoms' && (
+              <div className="space-y-2">
+                {preset.diagnosis.observedSymptoms.map((symptom) => (
+                  <button
+                    key={symptom.id}
+                    type="button"
+                    onClick={() => setActiveId(symptom.id)}
+                    className={`block w-full border p-2 text-left ${activeId === symptom.id ? 'rule-strong-border seal-soft-bg' : 'rule-border surface-plate'}`}
+                  >
+                    <span className="flex items-center justify-between gap-2">
+                      <span className={`font-mono-tab text-[9px] uppercase ${symptom.severity === 'critical' ? 'seal-text' : 'amber-text'}`}>
+                        {symptom.id} · {symptom.severity}
+                      </span>
+                      <span className="font-mono-tab text-[9px] text-aux">{symptom.source}</span>
+                    </span>
+                    <span className="mt-1 block text-xs font-medium leading-5 text-main">{symptom.label}</span>
+                    <span className="mt-1 block text-[10px] leading-4 text-sub">{symptom.detail}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {tab === 'log' && (
+              preset.log.trim() ? (
+                <pre className="whitespace-pre-wrap break-words font-mono-tab text-[10px] leading-[1.7] text-sub">{preset.log}</pre>
+              ) : (
+                <p className="py-8 text-center text-xs text-aux">未提供实验日志</p>
+              )
+            )}
+            {tab === 'conditions' && (
+              conditionRows.length > 0 ? (
+                <table className="w-full border-collapse text-[10px]">
+                  <thead className="surface-tint text-aux">
+                    <tr>
+                      {conditionRows[0].map((cell) => <th key={cell} className="border-b rule-border px-2 py-2 text-left font-medium">{cell}</th>)}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {conditionRows.slice(1).map((row, rowIndex) => (
+                      <tr key={`${row[0]}-${rowIndex}`} className="border-b rule-border last:border-0">
+                        {row.map((cell, cellIndex) => (
+                          <td key={`${cellIndex}-${cell}`} className={`break-words px-2 py-1.5 align-top font-mono-tab ${cellIndex === 0 ? 'text-aux' : 'text-main'}`}>{cell}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              ) : (
+                <p className="py-8 text-center text-xs text-aux">该病例未提供条件表</p>
+              )
+            )}
           </div>
         </div>
       </div>
+
+      {lightbox && preset.image && (
+        <div className="scrim fixed inset-0 z-[70] flex items-center justify-center p-6" onClick={() => setLightbox(false)}>
+          <div className="relative max-h-full max-w-5xl" onClick={(event) => event.stopPropagation()}>
+            <button type="button" aria-label="关闭图版" onClick={() => setLightbox(false)} className="absolute -top-8 right-0 text-[var(--bg-plate)]">
+              <X size={18} />
+            </button>
+            <div className="relative inline-block">
+              <img src={preset.image} alt={preset.diagnosis.caseTitle} className="max-h-[82vh] w-auto max-w-full" />
+              {bboxOverlay}
+            </div>
+          </div>
+        </div>
+      )}
     </section>
   )
 }

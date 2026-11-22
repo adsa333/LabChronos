@@ -1,9 +1,7 @@
-import { useEffect, useRef } from 'react'
-import { motion } from 'framer-motion'
-import { Archive, Check, CircleHelp, Download, FlaskConical, Lock, RotateCcw } from 'lucide-react'
+import { useEffect, useMemo } from 'react'
+import { Archive, Download, Lock, RotateCcw } from 'lucide-react'
 import type { Answers, HypothesisScore } from '../lib/scoring'
 import type { DiagnosisResult } from '../types/diagnosis'
-import PanelHeader from './PanelHeader'
 
 interface TriagePanelProps {
   diagnosis: DiagnosisResult
@@ -16,148 +14,156 @@ interface TriagePanelProps {
   onExportRecap: () => void
   onSaveToVault: () => void
   vaulted: boolean
-  vaultError?: string | null
   recapBusy: boolean
 }
 
-export default function TriagePanel({ diagnosis, answers, scores, lockedId, onAnswer, onManualLock, onReset, onExportRecap, onSaveToVault, vaulted, vaultError, recapBusy }: TriagePanelProps) {
+function ExpectedCurve({ curve }: { curve: { x: number; before: number | null; after: number }[] }) {
+  const width = 320
+  const height = 120
+  const pad = 18
+  const xs = curve.map((point) => point.x)
+  const ys = curve.flatMap((point) => [point.before, point.after]).filter((value): value is number => value !== null)
+  const minX = Math.min(...xs)
+  const maxX = Math.max(...xs)
+  const minY = Math.min(...ys)
+  const maxY = Math.max(...ys)
+  const sx = (x: number) => pad + ((x - minX) / Math.max(1, maxX - minX)) * (width - pad * 2)
+  const sy = (y: number) => height - pad - ((y - minY) / Math.max(0.001, maxY - minY)) * (height - pad * 2)
+  const before = curve.filter((point) => point.before !== null).map((point) => `${sx(point.x)},${sy(point.before as number)}`).join(' ')
+  const after = curve.map((point) => `${sx(point.x)},${sy(point.after)}`).join(' ')
+  return (
+    <svg viewBox={`0 0 ${width} ${height}`} className="w-full">
+      <line x1={pad} y1={height - pad} x2={width - pad} y2={height - pad} stroke="var(--rule)" strokeWidth="1" />
+      <line x1={pad} y1={pad} x2={pad} y2={height - pad} stroke="var(--rule)" strokeWidth="1" />
+      {before && <polyline points={before} fill="none" stroke="var(--seal)" strokeWidth="1.5" strokeDasharray="4 3" />}
+      <polyline points={after} fill="none" stroke="var(--teal)" strokeWidth="2" />
+      <text x={width - pad} y={pad} textAnchor="end" fontSize="8" fill="var(--ink3)" fontFamily="JetBrains Mono, monospace">BEFORE / AFTER</text>
+    </svg>
+  )
+}
+
+export default function TriagePanel({ diagnosis, answers, scores, lockedId, onAnswer, onManualLock, onReset, onExportRecap, onSaveToVault, vaulted, recapBusy }: TriagePanelProps) {
   const answeredCount = Object.keys(answers).length
-  const lockedHypothesis = lockedId ? diagnosis.hypotheses.find((hypothesis) => hypothesis.id === lockedId) : undefined
-  const lockedScore = lockedId ? scores.find((score) => score.id === lockedId) : undefined
-  const lockedCardRef = useRef<HTMLElement | null>(null)
+  const lockedHypothesis = lockedId ? diagnosis.hypotheses.find((item) => item.id === lockedId) : undefined
+  const lockedScore = lockedId ? scores.find((item) => item.id === lockedId) : undefined
+  const firstUnanswered = diagnosis.questions.findIndex((question) => answers[question.id] === undefined)
+  const currentIndex = firstUnanswered === -1 ? diagnosis.questions.length - 1 : firstUnanswered
+  const question = diagnosis.questions[currentIndex]
 
   useEffect(() => {
-    if (!lockedId) return
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
-    lockedCardRef.current?.scrollIntoView({ block: 'nearest', behavior: reduceMotion ? 'auto' : 'smooth' })
-  }, [lockedId])
+    if (lockedId) return
+    const onKeyDown = (event: KeyboardEvent) => {
+      const target = event.target as HTMLElement | null
+      if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return
+      if (event.key.toLowerCase() === 'r') {
+        onReset()
+        return
+      }
+      const optionIndex = Number(event.key) - 1
+      if (question && optionIndex >= 0 && optionIndex < question.options.length) {
+        onAnswer(question.id, optionIndex)
+      }
+    }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [lockedId, question, onAnswer, onReset])
+
+  const curve = lockedHypothesis?.minimalControl.expectedCurve
+  const progress = useMemo(() => diagnosis.questions.map((item) => answers[item.id] !== undefined), [diagnosis.questions, answers])
 
   return (
-    <section className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-line bg-panel">
-      <PanelHeader
-        index="03"
-        title="排查区"
-        english="TRIAGE"
-        action={
-          <button type="button" onClick={onReset} className="flex items-center gap-1 text-[10px] text-ink-muted hover:text-truth">
-            <RotateCcw size={12} />重置
-          </button>
-        }
-      />
-      <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-3">
-        <div className="flex items-center justify-between px-1 font-mono text-[10px] text-ink-muted">
-          <span>已回答 {answeredCount}/{diagnosis.questions.length}</span>
-          <span>p &lt; 15% 剪枝 · p ≥ 60% 锁定</span>
-        </div>
+    <section className="folio-card flex min-h-0 flex-col">
+      <div className="section-bar flex h-11 shrink-0 items-center justify-between px-4">
+        <h2 className="font-display text-sm font-semibold text-main">III · {lockedId ? '最小对照处方' : '鉴别追问'}</h2>
+        <button type="button" onClick={onReset} className="flex items-center gap-1 text-[10px] text-aux hover:seal-text">
+          <RotateCcw size={11} />重置
+        </button>
+      </div>
 
-        {lockedId && (
-          <details className="rounded-md border border-line bg-bg/60 px-3 py-2">
-            <summary className="cursor-pointer font-mono text-[10px] text-ink-muted">
-              排查记录 · 展开查看作答路径
-            </summary>
-            <ul className="mt-2 space-y-2">
-              {diagnosis.questions.map((question, questionIndex) => {
-                const optionIndex = answers[question.id]
-                const option = optionIndex === undefined ? null : question.options[optionIndex]
-                return (
-                  <li key={question.id} className="text-[11px] leading-4 text-ink-muted">
-                    <span className="mr-1.5 font-mono text-pruned">Q{questionIndex + 1}</span>
-                    {question.prompt}
-                    <div className={option ? 'mt-0.5 text-ink' : 'mt-0.5 text-pruned'}>{option ? option.label : '未作答'}</div>
-                  </li>
-                )
-              })}
-            </ul>
-          </details>
-        )}
-
-        {!lockedId && diagnosis.questions.map((question, questionIndex) => (
-          <article key={question.id} className="rounded-md border border-line bg-bg/60 p-3">
-            <div className="mb-2 flex items-center gap-2 font-mono text-[9px] tracking-[0.14em] text-suspect">
-              <CircleHelp size={14} />QUESTION {String(questionIndex + 1).padStart(2, '0')}
+      <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-16">
+        {!lockedId && question && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="font-mono-tab text-[10px] tracking-[0.16em] amber-text">QUESTION {String(currentIndex + 1).padStart(2, '0')}</span>
+              <span className="flex gap-1">
+                {progress.map((done, index) => (
+                  <span key={index} className={`h-1.5 w-5 ${done ? 'teal-text' : index === currentIndex ? 'amber-text' : 'text-aux'}`} style={{ background: 'currentColor' }} aria-label={`第${index + 1}题`} />
+                ))}
+              </span>
             </div>
-            <h3 className="text-xs font-medium leading-5 text-ink">{question.prompt}</h3>
-            <div className="mt-3 space-y-2">
+            <h3 className="font-display text-base font-semibold leading-6 text-main">{question.prompt}</h3>
+            <div className="space-y-2">
               {question.options.map((option, optionIndex) => {
                 const selected = answers[question.id] === optionIndex
                 return (
                   <button
                     key={option.label}
                     type="button"
-                    aria-pressed={selected}
                     onClick={() => onAnswer(question.id, optionIndex)}
-                    className={`flex w-full items-start gap-2 rounded-md border px-3 py-2 text-left text-[11px] leading-4 transition-colors ${selected ? 'border-truth/70 bg-truth/10 text-truth' : 'border-line bg-panel text-ink-muted hover:border-suspect/50 hover:text-ink'}`}
+                    className={`flex w-full items-start gap-2 border p-2 text-left text-xs leading-5 ${selected ? 'rule-strong-border teal-soft-bg teal-text' : 'rule-border surface-plate text-sub hover:seal-text'}`}
                   >
-                    <span className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border font-mono text-[9px] ${selected ? 'border-truth' : 'border-pruned'}`}>
-                      {selected ? <Check size={10} /> : String.fromCharCode(65 + optionIndex)}
-                    </span>
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center border rule-border font-mono-tab text-[10px]">{optionIndex + 1}</span>
                     <span>{option.label}</span>
                   </button>
                 )
               })}
             </div>
-            <details className="mt-3 border-t border-line pt-2 text-[10px] text-ink-muted">
-              <summary className="cursor-pointer font-mono text-suspect/80">howToCheck · 怎么检查</summary>
-              <p className="mt-2 leading-4">{question.howToCheck}</p>
+            <details className="border-t rule-border pt-2 text-[11px] text-sub">
+              <summary className="cursor-pointer font-mono-tab text-[10px] amber-text">查看排查核查方法</summary>
+              <p className="mt-2 leading-5">{question.howToCheck}</p>
             </details>
-          </article>
-        ))}
-
-        {!lockedId && (
-          <button type="button" onClick={onManualLock} className="flex w-full items-center justify-center gap-2 rounded-md border border-suspect/40 bg-suspect/5 px-3 py-2 text-[11px] text-suspect hover:bg-suspect/10">
-            <Lock size={13} />直接锁定当前最高项
-          </button>
+            <button type="button" onClick={onManualLock} className="flex w-full items-center justify-center gap-2 border rule-border px-3 py-2 text-[11px] text-sub hover:seal-text hover:seal-soft-bg">
+              <Lock size={12} />直接锁定当前最高项
+            </button>
+            <p className="font-mono-tab text-[9px] text-aux">键盘 1/2/3 作答 · R 重置 · 已答 {answeredCount}/{diagnosis.questions.length}</p>
+          </div>
         )}
 
-        {lockedHypothesis && lockedScore && (
-          <motion.article
-            key={lockedHypothesis.id}
-            ref={lockedCardRef}
-            initial={{ opacity: 0, y: 12 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={`rounded-md border p-4 ${lockedScore.probability >= 0.6 ? 'border-truth/60 bg-truth/5' : 'border-suspect/50 bg-suspect/5'}`}
-          >
-            <div className={`flex items-center gap-2 font-mono text-[9px] tracking-[0.12em] ${lockedScore.probability >= 0.6 ? 'text-truth' : 'text-suspect'}`}>
-              <Lock size={13} />{lockedScore.probability >= 0.6 ? 'ROOT CAUSE LOCKED' : 'LOW CONFIDENCE · 证据不足'}
+        {lockedId && lockedHypothesis && lockedScore && (
+          <div className="space-y-4">
+            <div className="border-l-[3px] pl-3" style={{ borderColor: 'var(--teal)' }}>
+              <p className="font-mono-tab text-[10px] tracking-[0.16em] teal-text">ROOT CAUSE LOCKED</p>
+              <h3 className="mt-1 font-display text-lg font-semibold leading-6 text-main">{lockedHypothesis.title}</h3>
+              <p className="mt-1 font-display text-3xl teal-text">{(lockedScore.probability * 100).toFixed(1)}%</p>
+              <p className="mt-2 text-[11px] leading-5 text-sub">{lockedHypothesis.mechanism}</p>
             </div>
-            <h3 className="mt-2 text-sm font-semibold leading-6 text-ink">{lockedHypothesis.title}</h3>
-            <div className="mt-1 font-mono text-lg text-truth">{(lockedScore.probability * 100).toFixed(1)}%</div>
-            <p className="mt-2 text-[11px] leading-5 text-ink-muted">{lockedHypothesis.mechanism}</p>
 
-            <div className="mt-3 flex gap-2">
-              <button type="button" onClick={onExportRecap} disabled={recapBusy} className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-truth/40 bg-truth/10 px-2 py-2 text-[11px] text-truth hover:bg-truth/15 disabled:cursor-not-allowed disabled:border-line disabled:bg-line disabled:text-pruned">
-                <Download size={13} />{recapBusy ? '渲染中…' : '导出复盘卡'}
-              </button>
-              <button type="button" onClick={onSaveToVault} disabled={vaulted} className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-line bg-panel px-2 py-2 text-[11px] text-ink-muted hover:border-truth/40 hover:text-truth disabled:cursor-not-allowed disabled:text-pruned">
-                <Archive size={13} />{vaulted ? '已存入' : '存入博物馆'}
-              </button>
-            </div>
-            {vaultError && <p className="mt-2 text-[10px] leading-4 text-suspect">{vaultError}</p>}
-
-            <div className="mt-4 border-t border-line pt-3">
-              <div className="mb-2 flex items-center gap-2 text-xs text-ink">
-                <FlaskConical size={14} className="text-truth" />最小对照实验
-              </div>
-              <p className="text-[11px] leading-5 text-ink-muted">{lockedHypothesis.minimalControl.action}</p>
-              <div className="mt-3 space-y-2">
+            <div className="folio-card p-3">
+              <p className="mb-2 font-mono-tab text-[10px] tracking-[0.16em] text-aux">单变量参数 DIFF</p>
+              <div className="space-y-2">
                 {lockedHypothesis.minimalControl.paramDiff.map((item) => (
-                  <div key={item.key} className="rounded-md border border-line bg-panel p-2.5">
-                    <div className="mb-2 font-mono text-[10px] text-ink-muted">{item.key}</div>
-                    <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 font-mono text-[10px]">
-                      <span className="rounded bg-red-400/10 px-2 py-1.5 text-red-300">{item.before}</span>
-                      <span className="text-pruned">→</span>
-                      <span className="rounded bg-truth/10 px-2 py-1.5 text-truth">{item.after}</span>
+                  <div key={item.key} className="border rule-border surface-plate p-2">
+                    <p className="font-mono-tab text-[10px] text-aux">{item.key}</p>
+                    <div className="mt-1 flex items-center gap-2 font-mono-tab text-[11px]">
+                      <span className="seal-text line-through">{item.before}</span>
+                      <span className="text-aux">→</span>
+                      <span className="font-bold teal-text">{item.after}</span>
                     </div>
                   </div>
                 ))}
               </div>
-              <div className="mt-3 rounded-md border border-truth/20 bg-truth/5 p-3">
-                <div className="mb-1 font-mono text-[9px] text-truth">EXPECTED OUTCOME</div>
-                <p className="text-[11px] leading-5 text-ink-muted">{lockedHypothesis.minimalControl.expectedOutcome}</p>
-              </div>
-              {diagnosis.confidenceNote && <p className="mt-3 text-[10px] leading-4 text-suspect">{diagnosis.confidenceNote}</p>}
+              <p className="mt-3 text-[11px] leading-5 text-sub">{lockedHypothesis.minimalControl.action}</p>
             </div>
-          </motion.article>
+
+            {curve && curve.length > 1 && (
+              <div className="folio-card p-3">
+                <p className="mb-2 font-mono-tab text-[10px] tracking-[0.16em] text-aux">修复前后预期曲线</p>
+                <ExpectedCurve curve={curve} />
+              </div>
+            )}
+
+            <div className="flex flex-wrap gap-2">
+              <button type="button" onClick={onExportRecap} disabled={recapBusy} className="btn-primary flex items-center gap-1.5 px-3 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-50">
+                <Download size={13} />{recapBusy ? '渲染中…' : '导出复盘卡'}
+              </button>
+              <button type="button" onClick={onSaveToVault} disabled={vaulted} className="btn-ghost flex items-center gap-1.5 px-3 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-50">
+                <Archive size={13} />{vaulted ? '已存入往期' : '存入往期病例'}
+              </button>
+              <button type="button" onClick={onReset} className="btn-ghost flex items-center gap-1.5 px-3 py-2 text-xs">
+                <RotateCcw size={13} />重新追问
+              </button>
+            </div>
+          </div>
         )}
       </div>
     </section>
