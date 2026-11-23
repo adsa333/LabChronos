@@ -59,7 +59,7 @@ export default function CausalTree({ diagnosis, scores, prunedIds, lockedId, ans
               >
                 <div className="flex items-center gap-2">
                   <span className="font-mono-tab text-[10px] uppercase text-aux">{score.id}</span>
-                  <span className={`min-w-0 flex-1 truncate text-xs font-medium ${isPruned ? 'text-aux line-through decoration-dashed' : isHovered ? 'seal-text' : isLocked ? 'teal-text' : 'text-main'}`}>
+                  <span className={`min-w-0 flex-1 line-clamp-2 text-xs font-medium leading-4 ${isPruned ? 'text-aux line-through decoration-dashed' : isHovered ? 'seal-text' : isLocked ? 'teal-text' : 'text-main'}`}>
                     {hypothesis.title}
                   </span>
                   <span className={`font-mono-tab text-xs ${isHovered ? 'seal-text' : isLocked ? 'teal-text' : 'text-sub'}`}>{(score.probability * 100).toFixed(1)}%</span>

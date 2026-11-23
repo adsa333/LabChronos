@@ -115,8 +115,8 @@ export default function CatalogRail({ theme, onToggleTheme, open, onClose, items
             </button>
             {pastOpen && (
               <div className="mt-1 space-y-1">
-                {items.length === 0 && <p className="px-2 py-2 text-[11px] text-aux">没有匹配的病例</p>}
-                {items.map((item) => (
+                {items.filter((item) => !(item.kind === 'custom' && filter === 'all')).length === 0 && <p className="px-2 py-2 text-[11px] text-aux">没有匹配的病例</p>}
+                {items.filter((item) => !(item.kind === 'custom' && filter === 'all')).map((item) => (
                   <button
                     key={item.id}
                     type="button"

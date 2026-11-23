@@ -30,6 +30,7 @@ export default function Workbench() {
   const [answers, setAnswers] = useState<Answers>({})
   const [manualLockId, setManualLockId] = useState<string | null>(null)
   const [customCase, setCustomCase] = useState<PresetCase | null>(null)
+  const [archiveCase, setArchiveCase] = useState<PresetCase | null>(null)
   const [customCaseLoad] = useState(loadCustomCase)
   const [vaultEntries, setVaultEntries] = useState<VaultEntry[]>([])
   const [recapUrl, setRecapUrl] = useState<string | null>(null)
@@ -46,8 +47,10 @@ export default function Workbench() {
   const recapBlobRef = useRef<Blob | null>(null)
   const recapExportedAtRef = useRef(0)
   const recapRequestRef = useRef(0)
+  const archiveUrlRef = useRef('')
 
-  const activeCase = customCase?.id === activeCaseId ? customCase : presets.find((preset) => preset.id === activeCaseId) ?? presets[0]
+  const activeCase = archiveCase ?? (customCase?.id === activeCaseId ? customCase : presets.find((preset) => preset.id === activeCaseId) ?? presets[0])
+  const isEditableCustom = Boolean(customCase && !archiveCase && customCase.id === activeCaseId)
   const { diagnosis } = activeCase
   const scores = useMemo(() => scoreHypotheses(diagnosis, answers), [diagnosis, answers])
   const prunedIds = useMemo(() => getPrunedIds(scores, Object.keys(answers).length), [scores, answers])
@@ -152,7 +155,7 @@ export default function Workbench() {
   }, [allItems, filter, search, activeCaseId])
 
   function scheduleAnswersSave(nextAnswers: Answers) {
-    if (!customCase) return
+    if (!customCase || archiveCase) return
     window.clearTimeout(answersSaveTimerRef.current)
     answersSaveTimerRef.current = window.setTimeout(() => {
       void saveCustomCase({
@@ -167,6 +170,14 @@ export default function Workbench() {
     }, 300)
   }
 
+  function clearArchiveCase() {
+    if (archiveUrlRef.current) {
+      URL.revokeObjectURL(archiveUrlRef.current)
+      archiveUrlRef.current = ''
+    }
+    setArchiveCase(null)
+  }
+
   function clearHover() {
     setHoveredSymptomId(null)
     setHoveredHypothesisId(null)
@@ -174,6 +185,8 @@ export default function Workbench() {
 
   function selectCase(caseId: string) {
     clearHover()
+    clearArchiveCase()
+    clearArchiveCase()
     setActiveCaseId(caseId)
     setAnswers({})
     setManualLockId(null)
@@ -183,14 +196,14 @@ export default function Workbench() {
   function answerQuestion(questionId: string, optionIndex: number) {
     const nextAnswers = { ...answers, [questionId]: optionIndex }
     setAnswers(nextAnswers)
-    if (customCase?.id === activeCaseId) scheduleAnswersSave(nextAnswers)
+    if (isEditableCustom) scheduleAnswersSave(nextAnswers)
     setManualLockId(null)
     setRecapSaved(false)
   }
 
   function resetAnswers() {
     setAnswers({})
-    if (customCase?.id === activeCaseId) scheduleAnswersSave({})
+    if (isEditableCustom) scheduleAnswersSave({})
     setManualLockId(null)
     setRecapSaved(false)
   }
@@ -204,6 +217,7 @@ export default function Workbench() {
     const hasImage = Boolean(imageFile)
     const log = logText ?? ''
     const image = imageFile ? URL.createObjectURL(imageFile) : ''
+    clearArchiveCase()
     customCreatedAtRef.current = createdAt
     customHasImageRef.current = hasImage
     void saveCustomCase({ id, diagnosis: nextDiagnosis, log, conditions: '', answers: {}, createdAt, hasImage }, imageFile)
@@ -217,11 +231,11 @@ export default function Workbench() {
 
   function removeCustomCase() {
     customCaseTouchedRef.current = true
-    if (customCase) {
-      window.clearTimeout(answersSaveTimerRef.current)
-      void deleteCustomCase(customCase.id)
-      if (customCase.image.startsWith('blob:')) URL.revokeObjectURL(customCase.image)
-    }
+    window.clearTimeout(answersSaveTimerRef.current)
+    void loadCustomCase()
+      .then((stored) => deleteCustomCase(stored?.caseData.id ?? customCase?.id ?? ''))
+      .catch(() => {})
+    if (customCase?.image.startsWith('blob:')) URL.revokeObjectURL(customCase.image)
     setCustomCase(null)
     selectCase(presets[0].id)
   }
@@ -326,20 +340,18 @@ export default function Workbench() {
   }
 
   function restoreVault(entry: VaultEntry) {
-    clearHover()
-    const replayId = `custom-replay-${entry.createdAt}`
-    customCaseTouchedRef.current = true
-    customCreatedAtRef.current = entry.createdAt
-    customHasImageRef.current = Boolean(entry.image)
-    setCustomCase({
-      id: replayId,
-      label: '自定义诊断',
+    clearArchiveCase()
+    const archiveUrl = entry.image ? URL.createObjectURL(entry.image) : ''
+    archiveUrlRef.current = archiveUrl
+    setArchiveCase({
+      id: `archive-${entry.id}`,
+      label: '往期病例',
       diagnosis: entry.diagnosis,
-      image: entry.image ? URL.createObjectURL(entry.image) : '',
+      image: archiveUrl,
       log: entry.log,
       conditions: '',
     })
-    setActiveCaseId(replayId)
+    setActiveCaseId(entry.id)
     setAnswers(entry.answers)
     const restoredScores = scoreHypotheses(entry.diagnosis, entry.answers)
     const savedLockId = entry.lockedId && restoredScores.some((score) => score.id === entry.lockedId) ? entry.lockedId : null
@@ -439,7 +451,7 @@ export default function Workbench() {
                   vaulted={recapSaved}
                   recapBusy={recapBusy}
                 />
-                {customCase?.id === activeCaseId && (
+                {isEditableCustom && (
                   <button type="button" onClick={removeCustomCase} className="btn-ghost self-start px-3 py-1.5 text-[11px]">移除当前自定义病例</button>
                 )}
               </div>
