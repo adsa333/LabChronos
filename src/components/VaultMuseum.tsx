@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Download, Play, Trash2 } from 'lucide-react'
 import type { PresetCase } from '../data/presets'
 import type { VaultEntry } from '../lib/vaultStorage'
@@ -18,28 +18,23 @@ function formatMonthDay(ts: number): string {
   return `${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`
 }
 
+function VaultThumbnail({ blob, title }: { blob: Blob; title: string }) {
+  const imageRef = useRef<HTMLImageElement>(null)
+  useEffect(() => {
+    const image = imageRef.current
+    if (!image) return
+    const url = URL.createObjectURL(blob)
+    image.src = url
+    return () => {
+      image.removeAttribute('src')
+      URL.revokeObjectURL(url)
+    }
+  }, [blob])
+  return <img ref={imageRef} alt={title} className="h-full w-full object-contain" />
+}
+
 export default function VaultMuseum({ entries, presets, onRestore, onDelete, onExport, onSelectPreset, onNewCase }: VaultMuseumProps) {
   const [tab, setTab] = useState<'archive' | 'public'>('archive')
-  const thumbUrls = useMemo(() => {
-    const urls: Record<string, string> = {}
-    entries.forEach((entry) => {
-      if (entry.thumb) urls[entry.id] = URL.createObjectURL(entry.thumb)
-    })
-    return urls
-  }, [entries])
-  const thumbUrlsRef = useRef<Record<string, string>>({})
-
-  useEffect(() => {
-    const previous = thumbUrlsRef.current
-    thumbUrlsRef.current = thumbUrls
-    Object.values(previous).forEach((url) => URL.revokeObjectURL(url))
-  }, [thumbUrls])
-
-  useEffect(() => {
-    return () => {
-      Object.values(thumbUrlsRef.current).forEach((url) => URL.revokeObjectURL(url))
-    }
-  }, [])
 
   const ascending = [...entries].sort((a, b) => a.createdAt - b.createdAt)
   const numberById = new Map(ascending.map((entry, index) => [entry.id, String(index + 1).padStart(3, '0')]))
@@ -72,21 +67,23 @@ export default function VaultMuseum({ entries, presets, onRestore, onDelete, onE
           <div className="grid grid-cols-[repeat(auto-fill,minmax(240px,1fr))] gap-4">
             {entries.map((entry) => (
               <article key={entry.id} className="folio-card group overflow-hidden">
-                <button type="button" onClick={() => onRestore(entry)} className="relative block aspect-[4/3] w-full surface-tint">
-                  {thumbUrls[entry.id] ? (
-                    <img src={thumbUrls[entry.id]} alt={entry.title} className="h-full w-full object-cover" />
-                  ) : (
-                    <span className="flex h-full w-full items-center justify-center font-mono-tab text-[10px] text-aux">NO IMAGE</span>
-                  )}
-                  <span className="absolute right-2 top-2 flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                    <span role="button" tabIndex={0} onClick={(event) => { event.stopPropagation(); onExport(entry) }} className="flex h-7 w-7 items-center justify-center border rule-border surface-plate text-sub hover:teal-text">
+                <div className="relative aspect-[4/3] w-full surface-tint">
+                  <button type="button" onClick={() => onRestore(entry)} className="absolute inset-0">
+                    {entry.thumb ? (
+                      <VaultThumbnail blob={entry.thumb} title={entry.title} />
+                    ) : (
+                      <span className="flex h-full w-full items-center justify-center font-mono-tab text-[10px] text-aux">NO IMAGE</span>
+                    )}
+                  </button>
+                  <div className="absolute right-2 top-2 flex gap-1 opacity-100 transition-opacity lg:opacity-0 lg:group-hover:opacity-100 lg:group-focus-within:opacity-100">
+                    <button type="button" aria-label={`导出 ${entry.title}`} onClick={() => onExport(entry)} className="flex h-7 w-7 items-center justify-center border rule-border surface-plate text-sub hover:teal-text">
                       <Download size={12} />
-                    </span>
-                    <span role="button" tabIndex={0} onClick={(event) => { event.stopPropagation(); if (window.confirm('删除这条存证？不可恢复')) onDelete(entry.id) }} className="flex h-7 w-7 items-center justify-center border rule-border surface-plate text-sub hover:seal-text">
+                    </button>
+                    <button type="button" aria-label={`删除 ${entry.title}`} onClick={() => { if (window.confirm('删除这条存证？不可恢复')) onDelete(entry.id) }} className="flex h-7 w-7 items-center justify-center border rule-border surface-plate text-sub hover:seal-text">
                       <Trash2 size={12} />
-                    </span>
-                  </span>
-                </button>
+                    </button>
+                  </div>
+                </div>
                 <div className="space-y-1.5 p-3">
                   <div className="flex items-center justify-between font-mono-tab text-[10px] text-aux">
                     <span>NO.{numberById.get(entry.id)}</span>
@@ -116,7 +113,7 @@ export default function VaultMuseum({ entries, presets, onRestore, onDelete, onE
             {presets.map((preset, index) => (
               <button key={preset.id} type="button" onClick={() => onSelectPreset(preset.id)} className="folio-card overflow-hidden text-left hover:rule-strong-border">
                 <div className="aspect-[4/3] surface-tint">
-                  <img src={preset.image} alt={preset.label} className="h-full w-full object-cover" />
+                  <img src={preset.image} alt={preset.label} className="h-full w-full object-contain" />
                 </div>
                 <div className="space-y-1.5 p-3">
                   <div className="flex items-center justify-between font-mono-tab text-[10px] text-aux">

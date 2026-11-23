@@ -51,14 +51,15 @@ export default function TriagePanel({ diagnosis, answers, scores, lockedId, onAn
   const question = diagnosis.questions[currentIndex]
 
   useEffect(() => {
-    if (lockedId) return
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null
+      if (event.ctrlKey || event.metaKey || event.altKey || document.querySelector('[role="dialog"]')) return
       if (target && ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName)) return
       if (event.key.toLowerCase() === 'r') {
         onReset()
         return
       }
+      if (lockedId) return
       const optionIndex = Number(event.key) - 1
       if (question && optionIndex >= 0 && optionIndex < question.options.length) {
         onAnswer(question.id, optionIndex)
@@ -72,7 +73,7 @@ export default function TriagePanel({ diagnosis, answers, scores, lockedId, onAn
   const progress = useMemo(() => diagnosis.questions.map((item) => answers[item.id] !== undefined), [diagnosis.questions, answers])
 
   return (
-    <section className="folio-card flex min-h-0 flex-col">
+    <section className="folio-card flex min-h-0 flex-col border-t-[1.5px] rule-top-strong">
       <div className="section-bar flex h-11 shrink-0 items-center justify-between px-4">
         <h2 className="font-display text-sm font-semibold text-main">III · {lockedId ? '最小对照处方' : '鉴别追问'}</h2>
         <button type="button" onClick={onReset} className="flex items-center gap-1 text-[10px] text-aux hover:seal-text">
@@ -145,19 +146,24 @@ export default function TriagePanel({ diagnosis, answers, scores, lockedId, onAn
               <p className="mt-3 text-[11px] leading-5 text-sub">{lockedHypothesis.minimalControl.action}</p>
             </div>
 
-            {curve && curve.length > 1 && (
+            {curve && curve.length > 1 ? (
               <div className="folio-card p-3">
                 <p className="mb-2 font-mono-tab text-[10px] tracking-[0.16em] text-aux">修复前后预期曲线</p>
                 <ExpectedCurve curve={curve} />
+              </div>
+            ) : (
+              <div className="folio-card p-3">
+                <p className="mb-2 font-mono-tab text-[10px] tracking-[0.16em] text-aux">单变量预期结果</p>
+                <p className="text-[11px] leading-5 text-sub">{lockedHypothesis.minimalControl.expectedOutcome}</p>
               </div>
             )}
 
             <div className="flex flex-wrap gap-2">
               <button type="button" onClick={onExportRecap} disabled={recapBusy} className="btn-primary flex items-center gap-1.5 px-3 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-50">
-                <Download size={13} />{recapBusy ? '渲染中…' : '导出复盘卡'}
+                <Download size={13} />{recapBusy ? '渲染中…' : '导出复盘卡 PNG'}
               </button>
               <button type="button" onClick={onSaveToVault} disabled={vaulted} className="btn-ghost flex items-center gap-1.5 px-3 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-50">
-                <Archive size={13} />{vaulted ? '已存入往期' : '存入往期病例'}
+                <Archive size={13} />{vaulted ? '已存入往期' : '存入博物馆'}
               </button>
               <button type="button" onClick={onReset} className="btn-ghost flex items-center gap-1.5 px-3 py-2 text-xs">
                 <RotateCcw size={13} />重新追问

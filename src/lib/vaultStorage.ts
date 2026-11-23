@@ -9,6 +9,7 @@ export interface VaultEntry {
   domain: string
   truthTitle: string
   probability: number
+  lockedId?: string
   symptomSummary: string
   log: string
   answers: Answers
@@ -45,7 +46,7 @@ async function compressBlob(blob: Blob, maxEdge: number, quality: number): Promi
     canvas.height = Math.max(1, Math.round(bitmap.height * scale))
     const context = canvas.getContext('2d')
     if (!context) return null
-    context.fillStyle = '#0B0F14'
+    context.fillStyle = '#EFEAE0'
     context.fillRect(0, 0, canvas.width, canvas.height)
     context.drawImage(bitmap, 0, 0, canvas.width, canvas.height)
     return await new Promise<Blob | null>((resolve) => {

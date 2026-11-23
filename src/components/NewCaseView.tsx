@@ -20,7 +20,7 @@ const DOMAINS: { label: string; value?: Domain }[] = [
 ]
 
 function countKeyValues(log: string): number {
-  return log.split(/\r?\n/).filter((line) => /[A-Za-z0-9_]+\s*=/.test(line)).length
+  return log.split(/\r?\n/).filter((line) => /[A-Za-z0-9_]+\s*=\s*[^=]+$/.test(line)).length
 }
 
 export default function NewCaseView({ onCancel, onSuccess }: NewCaseViewProps) {
@@ -36,10 +36,12 @@ export default function NewCaseView({ onCancel, onSuccess }: NewCaseViewProps) {
   const [elapsed, setElapsed] = useState(0)
   const inputRef = useRef<HTMLInputElement>(null)
   const abortRef = useRef<AbortController | null>(null)
+  const requestRef = useRef(0)
   const previewRef = useRef('')
 
   useEffect(() => {
     return () => {
+      requestRef.current += 1
       if (previewRef.current) URL.revokeObjectURL(previewRef.current)
       abortRef.current?.abort()
     }
@@ -87,6 +89,7 @@ export default function NewCaseView({ onCancel, onSuccess }: NewCaseViewProps) {
   async function submit() {
     if (busy || (!file && !log.trim()) || log.length > MAX_LOG) return
     setError('')
+    const request = ++requestRef.current
     setStage(0)
     setElapsed(0)
     setBusy(true)
@@ -94,9 +97,11 @@ export default function NewCaseView({ onCancel, onSuccess }: NewCaseViewProps) {
     abortRef.current = controller
     try {
       const diagnosis = await runDiagnose({ imageFile: file ?? undefined, logText: log || undefined, domainHint: domain }, controller.signal)
+      if (request !== requestRef.current) return
       setBusy(false)
       onSuccess(diagnosis, file ?? undefined, log)
     } catch (caught) {
+      if (request !== requestRef.current) return
       setBusy(false)
       if (!(caught instanceof DOMException && caught.name === 'AbortError')) {
         setError(caught instanceof Error ? caught.message : '诊断失败，请稍后重试。')
@@ -105,6 +110,7 @@ export default function NewCaseView({ onCancel, onSuccess }: NewCaseViewProps) {
   }
 
   function cancel() {
+    requestRef.current += 1
     abortRef.current?.abort()
     setBusy(false)
   }
@@ -155,7 +161,7 @@ export default function NewCaseView({ onCancel, onSuccess }: NewCaseViewProps) {
             {error && (
               <div className="border rule-border seal-soft-bg p-3 text-xs seal-text">
                 {error}
-                <button type="button" onClick={() => setError('')} className="ml-3 underline">重试</button>
+                <button type="button" onClick={() => setError('')} className="ml-3 underline">关闭</button>
               </div>
             )}
 
@@ -181,7 +187,7 @@ export default function NewCaseView({ onCancel, onSuccess }: NewCaseViewProps) {
                 role="button"
                 tabIndex={0}
                 onClick={() => inputRef.current?.click()}
-                onKeyDown={(event) => { if (event.key === 'Enter') inputRef.current?.click() }}
+                onKeyDown={(event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); inputRef.current?.click() } }}
                 onDragOver={(event) => { event.preventDefault(); setDragging(true) }}
                 onDragLeave={() => setDragging(false)}
                 onDrop={(event) => { event.preventDefault(); setDragging(false); selectFile(event.dataTransfer.files[0]) }}

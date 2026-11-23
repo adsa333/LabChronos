@@ -35,6 +35,9 @@ export default function Workbench() {
   const [recapUrl, setRecapUrl] = useState<string | null>(null)
   const [recapBusy, setRecapBusy] = useState(false)
   const [recapSaved, setRecapSaved] = useState(false)
+  const [recapCanSave, setRecapCanSave] = useState(true)
+  const [hoveredSymptomId, setHoveredSymptomId] = useState<string | null>(null)
+  const [hoveredHypothesisId, setHoveredHypothesisId] = useState<string | null>(null)
   const customCreatedAtRef = useRef(0)
   const customHasImageRef = useRef(false)
   const customCaseTouchedRef = useRef(false)
@@ -52,6 +55,8 @@ export default function Workbench() {
   const lockedId = manualLockId ?? automaticLockId
   const leading = getLeadingHypothesis(scores)
   const answeredCount = Object.keys(answers).length
+  const hoveredHypothesis = hoveredHypothesisId ? diagnosis.hypotheses.find((item) => item.id === hoveredHypothesisId) : undefined
+  const highlightSymptomIds = hoveredSymptomId ? [hoveredSymptomId] : hoveredHypothesis?.evidenceFor ?? []
   const flowStep = lockedId ? 5 : prunedIds.length > 0 ? 4 : answeredCount > 0 ? 3 : 2
 
   useEffect(() => {
@@ -112,11 +117,11 @@ export default function Workbench() {
     const customItems = customCase ? [{
       id: customCase.id,
       kind: 'custom' as const,
-      title: '自定义诊断',
+      title: '新建 · 自定义诊断',
       summary: customCase.diagnosis.caseTitle,
       domain: customCase.diagnosis.domain,
       code: 'C.01',
-      truthTitle: lockedId ? diagnosis.hypotheses.find((item) => item.id === lockedId)?.title : undefined,
+      truthTitle: customCase.id === activeCaseId && lockedId ? diagnosis.hypotheses.find((item) => item.id === lockedId)?.title : undefined,
       probability: customCase.id === activeCaseId ? leading.probability : undefined,
       locked: customCase.id === activeCaseId ? Boolean(lockedId) : undefined,
     }] : []
@@ -162,7 +167,13 @@ export default function Workbench() {
     }, 300)
   }
 
+  function clearHover() {
+    setHoveredSymptomId(null)
+    setHoveredHypothesisId(null)
+  }
+
   function selectCase(caseId: string) {
+    clearHover()
     setActiveCaseId(caseId)
     setAnswers({})
     setManualLockId(null)
@@ -172,19 +183,20 @@ export default function Workbench() {
   function answerQuestion(questionId: string, optionIndex: number) {
     const nextAnswers = { ...answers, [questionId]: optionIndex }
     setAnswers(nextAnswers)
-    if (customCase) scheduleAnswersSave(nextAnswers)
+    if (customCase?.id === activeCaseId) scheduleAnswersSave(nextAnswers)
     setManualLockId(null)
     setRecapSaved(false)
   }
 
   function resetAnswers() {
     setAnswers({})
-    if (customCase) scheduleAnswersSave({})
+    if (customCase?.id === activeCaseId) scheduleAnswersSave({})
     setManualLockId(null)
     setRecapSaved(false)
   }
 
   function handleDiagnoseSuccess(nextDiagnosis: DiagnosisResult, imageFile?: File, logText?: string) {
+    clearHover()
     window.clearTimeout(answersSaveTimerRef.current)
     customCaseTouchedRef.current = true
     const createdAt = Date.now()
@@ -224,8 +236,9 @@ export default function Workbench() {
     }
   }
 
-  async function renderRecapFromData(data: { diagnosis: DiagnosisResult; scores: HypothesisScore[]; lockedId: string; answers: Answers; image: Blob | null }) {
+  async function renderRecapFromData(data: { diagnosis: DiagnosisResult; scores: HypothesisScore[]; lockedId: string; answers: Answers; image: Blob | null }, canSave = true) {
     const request = ++recapRequestRef.current
+    setRecapCanSave(canSave)
     setRecapBusy(true)
     setRecapSaved(false)
     try {
@@ -251,9 +264,10 @@ export default function Workbench() {
 
   async function exportVaultEntry(entry: VaultEntry) {
     const entryScores = scoreHypotheses(entry.diagnosis, entry.answers)
-    const entryLocked = getAutomaticLockId(entry.diagnosis, entry.answers, entryScores) ?? entryScores[0]?.id
+    const savedLockId = entry.lockedId && entryScores.some((score) => score.id === entry.lockedId) ? entry.lockedId : null
+    const entryLocked = savedLockId ?? getAutomaticLockId(entry.diagnosis, entry.answers, entryScores) ?? getLeadingHypothesis(entryScores).id
     if (!entryLocked) return
-    await renderRecapFromData({ diagnosis: entry.diagnosis, scores: entryScores, lockedId: entryLocked, answers: entry.answers, image: entry.image })
+    await renderRecapFromData({ diagnosis: entry.diagnosis, scores: entryScores, lockedId: entryLocked, answers: entry.answers, image: entry.image }, false)
   }
 
   function closeRecap() {
@@ -285,6 +299,7 @@ export default function Workbench() {
       domain: diagnosis.domain,
       truthTitle: hypothesis?.title ?? '',
       probability: score?.probability ?? 0,
+      lockedId,
       symptomSummary: diagnosis.observedSymptoms.find((item) => item.severity === 'critical')?.label ?? '',
       log: activeCase.log,
       answers,
@@ -299,6 +314,7 @@ export default function Workbench() {
   }
 
   async function openArchive() {
+    clearHover()
     setView('archive')
     setRailOpen(false)
     setVaultEntries(await listVaultEntries())
@@ -310,6 +326,7 @@ export default function Workbench() {
   }
 
   function restoreVault(entry: VaultEntry) {
+    clearHover()
     const replayId = `custom-replay-${entry.createdAt}`
     customCaseTouchedRef.current = true
     customCreatedAtRef.current = entry.createdAt
@@ -324,12 +341,15 @@ export default function Workbench() {
     })
     setActiveCaseId(replayId)
     setAnswers(entry.answers)
-    setManualLockId(null)
+    const restoredScores = scoreHypotheses(entry.diagnosis, entry.answers)
+    const savedLockId = entry.lockedId && restoredScores.some((score) => score.id === entry.lockedId) ? entry.lockedId : null
+    setManualLockId(savedLockId ?? getAutomaticLockId(entry.diagnosis, entry.answers, restoredScores) ?? getLeadingHypothesis(restoredScores).id)
     setRecapSaved(false)
     setView('case')
   }
 
   function handleSelect(id: string) {
+    clearHover()
     const entry = vaultEntries.find((item) => item.id === id)
     if (entry) {
       restoreVault(entry)
@@ -350,8 +370,9 @@ export default function Workbench() {
   const viewTitle = view === 'case' ? activeCase.label : view === 'new' ? '新建病例' : '翻车博物馆'
 
   return (
-    <div className="flex h-screen overflow-hidden surface-desk">
-      <CatalogRail
+    <div className="h-screen surface-desk p-2.5 sm:p-4">
+      <div className="app-shell flex h-full overflow-hidden border-[1.5px] rule-strong-border surface-folio">
+        <CatalogRail
         theme={theme}
         onToggleTheme={() => setTheme((value) => value === 'ink' ? 'lumen' : 'ink')}
         open={railOpen}
@@ -364,7 +385,7 @@ export default function Workbench() {
         search={search}
         onSearch={setSearch}
         onSelect={handleSelect}
-        onNewCase={() => { setView('new'); setRailOpen(false) }}
+        onNewCase={() => { clearHover(); setView('new'); setRailOpen(false) }}
         onArchive={() => void openArchive()}
         flowStep={flowStep}
         totalCount={presets.length + (customCase ? 1 : 0) + vaultEntries.length}
@@ -390,10 +411,21 @@ export default function Workbench() {
 
         <div className="min-h-0 flex-1 overflow-hidden">
           {view === 'case' && (
-            <div className="grid h-full grid-cols-1 overflow-y-auto xl:grid-cols-2 xl:overflow-hidden">
-              <EvidencePanel preset={activeCase} />
-              <div className="flex min-h-0 flex-col gap-3 overflow-y-auto p-3 pb-16 surface-folio">
-                <CausalTree diagnosis={diagnosis} scores={scores} prunedIds={prunedIds} lockedId={lockedId} theme={theme} />
+            <div className="grid min-h-full grid-cols-1 overflow-y-auto xl:h-full xl:min-h-0 xl:grid-cols-2 xl:overflow-hidden">
+              <EvidencePanel key={activeCase.id} preset={activeCase} highlightSymptomIds={highlightSymptomIds} onHoverSymptom={setHoveredSymptomId} />
+              <div className="flex min-h-0 flex-col gap-3 p-3 pb-16 surface-folio xl:overflow-y-auto">
+                <CausalTree
+                  key={activeCase.id}
+                  diagnosis={diagnosis}
+                  scores={scores}
+                  prunedIds={prunedIds}
+                  lockedId={lockedId}
+                  answeredCount={answeredCount}
+                  theme={theme}
+                  hoveredSymptomId={hoveredSymptomId}
+                  hoveredHypothesisId={hoveredHypothesisId}
+                  onHoverHypothesis={setHoveredHypothesisId}
+                />
                 <TriagePanel
                   diagnosis={diagnosis}
                   answers={answers}
@@ -426,6 +458,7 @@ export default function Workbench() {
             />
           )}
         </div>
+        </div>
       </div>
 
       <RecapCardPreview
@@ -436,6 +469,7 @@ export default function Workbench() {
         onDownload={downloadRecap}
         onSaveToVault={() => void saveToVault()}
         saved={recapSaved}
+        canSave={recapCanSave}
       />
     </div>
   )

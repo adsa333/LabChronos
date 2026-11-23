@@ -1,4 +1,4 @@
-// B 的接口就绪后设 VITE_DIAGNOSE_MODE=live 即切换，页面代码不用动。
+// 默认使用真实接口；仅显式设置 VITE_DIAGNOSE_MODE=mock 用于本地演示。
 import { presets } from '../data/presets'
 import type { DiagnosisResult, Domain } from '../types/diagnosis'
 import { diagnoseExperiment } from './api'
@@ -9,7 +9,7 @@ export interface DiagnoseInput {
   domainHint?: Domain
 }
 
-const LIVE = import.meta.env.VITE_DIAGNOSE_MODE === 'live'
+const LIVE = import.meta.env.VITE_DIAGNOSE_MODE !== 'mock'
 const MOCK_DELAY = 4200
 
 function wait(ms: number, signal?: AbortSignal) {

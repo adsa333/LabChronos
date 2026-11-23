@@ -110,6 +110,7 @@ body.ink::before {
 .amber-soft-bg { background: var(--amber-soft); }
 .rule-border { border-color: var(--rule); }
 .rule-strong-border { border-color: var(--rule-strong); }
+.folio-card.rule-top-strong { border-top-color: var(--rule-strong); }
 
 .double-rule {
   position: relative;
@@ -129,6 +130,14 @@ body.ink::before {
   background: var(--bg-plate);
   border: 1px solid var(--rule);
   border-radius: 2px;
+}
+
+.app-shell {
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.09);
+}
+
+body.lumen .app-shell {
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.55);
 }
 
 .section-bar {
