@@ -24,7 +24,7 @@ export default function CausalTree({ diagnosis, scores, prunedIds, lockedId, ans
         <h2 className="font-display text-sm font-semibold text-main">II · 因果墨环与假设分布</h2>
         <span className="font-mono-tab text-[10px] tracking-[0.16em] text-aux">CAUSAL INK RING</span>
       </div>
-      <div className="flex min-h-0 flex-1 flex-wrap gap-4 p-4 xl:overflow-y-auto">
+      <div className="flex min-h-0 flex-1 flex-wrap gap-3 p-3 xl:overflow-y-auto">
         <div className="shrink-0">
           <InkRingCanvas
             hypotheses={diagnosis.hypotheses}
@@ -67,7 +67,7 @@ export default function CausalTree({ diagnosis, scores, prunedIds, lockedId, ans
                 <div className="mt-1.5 h-1.5 overflow-hidden surface-tint">
                   <div className="h-full" style={{ width: `${Math.max(2, score.probability * 100)}%`, background: isHovered ? 'var(--seal)' : isLocked ? 'var(--teal)' : isPruned ? 'var(--rule)' : 'var(--amber)' }} />
                 </div>
-                {!isPruned && (
+                {!isPruned && !lockedId && (
                   <ul className="mt-1.5 space-y-0.5">
                     {hypothesis.subCauses.map((cause) => (
                       <li key={cause} className="truncate text-[10px] text-aux">· {cause}</li>

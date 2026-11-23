@@ -19,8 +19,8 @@ interface TriagePanelProps {
 
 function ExpectedCurve({ curve }: { curve: { x: number; before: number | null; after: number }[] }) {
   const width = 320
-  const height = 120
-  const pad = 18
+  const height = 104
+  const pad = 16
   const xs = curve.map((point) => point.x)
   const ys = curve.flatMap((point) => [point.before, point.after]).filter((value): value is number => value !== null)
   const minX = Math.min(...xs)
@@ -32,7 +32,7 @@ function ExpectedCurve({ curve }: { curve: { x: number; before: number | null; a
   const before = curve.filter((point) => point.before !== null).map((point) => `${sx(point.x)},${sy(point.before as number)}`).join(' ')
   const after = curve.map((point) => `${sx(point.x)},${sy(point.after)}`).join(' ')
   return (
-    <svg viewBox={`0 0 ${width} ${height}`} className="w-full">
+    <svg viewBox={`0 0 ${width} ${height}`} className="max-h-[104px] w-full">
       <line x1={pad} y1={height - pad} x2={width - pad} y2={height - pad} stroke="var(--rule)" strokeWidth="1" />
       <line x1={pad} y1={pad} x2={pad} y2={height - pad} stroke="var(--rule)" strokeWidth="1" />
       {before && <polyline points={before} fill="none" stroke="var(--seal)" strokeWidth="1.5" strokeDasharray="4 3" />}
@@ -81,7 +81,7 @@ export default function TriagePanel({ diagnosis, answers, scores, lockedId, onAn
         </button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto p-4 pb-16">
+      <div className="min-h-0 flex-1 overflow-y-auto p-3 pb-6">
         {!lockedId && question && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -121,51 +121,53 @@ export default function TriagePanel({ diagnosis, answers, scores, lockedId, onAn
         )}
 
         {lockedId && lockedHypothesis && lockedScore && (
-          <div className="space-y-4">
+          <div className="space-y-2">
             <div className="border-l-[3px] pl-3" style={{ borderColor: 'var(--teal)' }}>
               <p className="font-mono-tab text-[10px] tracking-[0.16em] teal-text">ROOT CAUSE LOCKED</p>
               <h3 className="mt-1 font-display text-lg font-semibold leading-6 text-main">{lockedHypothesis.title}</h3>
               <p className="mt-1 font-display text-3xl teal-text">{(lockedScore.probability * 100).toFixed(1)}%</p>
-              <p className="mt-2 text-[11px] leading-5 text-sub">{lockedHypothesis.mechanism}</p>
+              <p className="mt-2 text-[11px] leading-4 text-sub">{lockedHypothesis.mechanism}</p>
             </div>
 
-            <div className="folio-card p-3">
-              <p className="mb-2 font-mono-tab text-[10px] tracking-[0.16em] text-aux">单变量参数 DIFF</p>
-              <div className="space-y-2">
-                {lockedHypothesis.minimalControl.paramDiff.map((item) => (
-                  <div key={item.key} className="border rule-border surface-plate p-2">
-                    <p className="font-mono-tab text-[10px] text-aux">{item.key}</p>
-                    <div className="mt-1 flex items-center gap-2 font-mono-tab text-[11px]">
-                      <span className="seal-text line-through">{item.before}</span>
-                      <span className="text-aux">→</span>
-                      <span className="font-bold teal-text">{item.after}</span>
+            <div className="grid grid-cols-1 gap-3 min-[1400px]:grid-cols-2">
+              <div className="folio-card p-3">
+                <p className="mb-2 font-mono-tab text-[10px] tracking-[0.16em] text-aux">单变量参数 DIFF</p>
+                <div className="space-y-2">
+                  {lockedHypothesis.minimalControl.paramDiff.map((item) => (
+                    <div key={item.key} className="border rule-border surface-plate p-2">
+                      <p className="font-mono-tab text-[10px] text-aux">{item.key}</p>
+                      <div className="mt-1 flex items-center gap-2 font-mono-tab text-[11px]">
+                        <span className="seal-text line-through">{item.before}</span>
+                        <span className="text-aux">→</span>
+                        <span className="font-bold teal-text">{item.after}</span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+                <p className="mt-3 line-clamp-2 text-[11px] leading-5 text-sub">{lockedHypothesis.minimalControl.action}</p>
               </div>
-              <p className="mt-3 text-[11px] leading-5 text-sub">{lockedHypothesis.minimalControl.action}</p>
-            </div>
 
-            {curve && curve.length > 1 ? (
-              <div className="folio-card p-3">
-                <p className="mb-2 font-mono-tab text-[10px] tracking-[0.16em] text-aux">修复前后预期曲线</p>
-                <ExpectedCurve curve={curve} />
-              </div>
-            ) : (
-              <div className="folio-card p-3">
-                <p className="mb-2 font-mono-tab text-[10px] tracking-[0.16em] text-aux">单变量预期结果</p>
-                <p className="text-[11px] leading-5 text-sub">{lockedHypothesis.minimalControl.expectedOutcome}</p>
-              </div>
-            )}
+              {curve && curve.length > 1 ? (
+                <div className="folio-card p-3">
+                  <p className="mb-2 font-mono-tab text-[10px] tracking-[0.16em] text-aux">修复前后预期曲线</p>
+                  <ExpectedCurve curve={curve} />
+                </div>
+              ) : (
+                <div className="folio-card p-3">
+                  <p className="mb-2 font-mono-tab text-[10px] tracking-[0.16em] text-aux">单变量预期结果</p>
+                  <p className="text-[11px] leading-5 text-sub">{lockedHypothesis.minimalControl.expectedOutcome}</p>
+                </div>
+              )}
+            </div>
 
             <div className="flex flex-wrap gap-2">
-              <button type="button" onClick={onExportRecap} disabled={recapBusy} className="btn-primary flex items-center gap-1.5 px-3 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-50">
+              <button type="button" onClick={onExportRecap} disabled={recapBusy} className="btn-primary flex items-center gap-1.5 px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-50">
                 <Download size={13} />{recapBusy ? '渲染中…' : '导出复盘卡 PNG'}
               </button>
-              <button type="button" onClick={onSaveToVault} disabled={vaulted} className="btn-ghost flex items-center gap-1.5 px-3 py-2 text-xs disabled:cursor-not-allowed disabled:opacity-50">
+              <button type="button" onClick={onSaveToVault} disabled={vaulted} className="btn-ghost flex items-center gap-1.5 px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-50">
                 <Archive size={13} />{vaulted ? '已存入往期' : '存入博物馆'}
               </button>
-              <button type="button" onClick={onReset} className="btn-ghost flex items-center gap-1.5 px-3 py-2 text-xs">
+              <button type="button" onClick={onReset} className="btn-ghost flex items-center gap-1.5 px-3 py-1.5 text-xs">
                 <RotateCcw size={13} />重新追问
               </button>
             </div>

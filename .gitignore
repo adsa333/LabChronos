@@ -26,5 +26,7 @@ dist-ssr
 
 # local review screenshots
 .review
+# external UI instruction package (reference only)
+/LabChronos_A端UI重构包/
 # Qoder Sites deployment anchor (keep local, do not publish)
 .LabChronos.qoder.site

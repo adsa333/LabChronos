@@ -217,10 +217,10 @@ export async function renderRecapCard(input: RecapInput): Promise<Blob> {
     ctx.fillRect(symptomX, y - 10, 5, 5)
     ctx.fillStyle = COLORS.ink
     ctx.font = font(16, '500')
-    drawTruncated(ctx, symptom.label, symptomX + 16, y, symptomWidth - 16)
+    wrapText(ctx, symptom.label, symptomWidth - 16, 2).forEach((line, lineIndex) => ctx.fillText(line, symptomX + 16, y + lineIndex * 16))
     ctx.fillStyle = COLORS.inkMuted
     ctx.font = font(11)
-    wrapText(ctx, symptom.detail, symptomWidth - 16, 2).forEach((line, lineIndex) => ctx.fillText(line, symptomX + 16, y + 18 + lineIndex * 14))
+    ctx.fillText(truncate(ctx, symptom.detail, symptomWidth - 16), symptomX + 16, y + 40)
   })
 
   ctx.fillStyle = COLORS.ink
@@ -275,7 +275,7 @@ export async function renderRecapCard(input: RecapInput): Promise<Blob> {
   })
 
   ctx.fillStyle = COLORS.plate
-  ctx.fillRect(33, 1088, WIDTH - 66, HEIGHT - 1089 - 32)
+  ctx.fillRect(33, 1088, WIDTH - 66, HEIGHT - 1088 - 40)
   rule(ctx, 1088, true)
   ctx.fillStyle = COLORS.truth
   ctx.fillRect(MARGIN, 1120, 4, 42)
@@ -324,9 +324,9 @@ export async function renderRecapCard(input: RecapInput): Promise<Blob> {
   }
   ctx.fillStyle = COLORS.inkMuted
   ctx.font = font(11, '400', MONO)
-  ctx.fillText('单变量原则 · 客观取证 · 可复现实验', MARGIN, 1316)
+  ctx.fillText('单变量原则 · 客观取证 · 可复现实验', MARGIN, 1302)
   ctx.textAlign = 'right'
-  ctx.fillText('#LabChronos', WIDTH - MARGIN, 1316)
+  ctx.fillText('#LabChronos', WIDTH - MARGIN, 1302)
   ctx.textAlign = 'left'
 
   return await new Promise<Blob>((resolve, reject) => {
