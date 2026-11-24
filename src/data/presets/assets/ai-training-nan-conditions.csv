@@ -1,15 +1,20 @@
 类别,参数,值
 训练,框架,PyTorch AMP
 训练,精度模式,autocast + GradScaler
-训练,优化器,AdamW
-训练,初始学习率,0.001
+训练,优化器,SGD
+训练,动量,0.9
+训练,初始学习率,0.05
 训练,Warmup,0 epochs
 训练,Batch size,128
 训练,随机种子,42
 训练,数据顺序,固定
 梯度,梯度裁剪,未启用
-日志,grad_norm,优化器更新前记录
+梯度,Epoch 14 grad_norm,48500.0（有限大值）
+梯度,Epoch 14 grad_scale,65536.0
+更新,scaler_step_skipped,false
+更新,param_update_norm,2425.0
+更新,param_max_abs,7.2e4（超过 FP16 上限 65504）
 故障,Epoch 13,Loss=1.20; grad_norm=128.60
-故障,Epoch 14,Loss=9.80; grad_norm=inf
-故障,Epoch 15,Loss=NaN
+故障,Epoch 14,Loss=9.80; 有限大梯度未裁剪且 step 未跳过
+故障,Epoch 15,fp16_activation_overflow=true; logits_max_abs=inf; Loss=NaN
 对照实验,唯一修改变量,梯度裁剪 max_norm: 未启用 → 1.0
