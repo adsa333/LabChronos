@@ -93,7 +93,7 @@ function buildMessages(input, systemPrompt) {
   ];
 }
 
-async function callModel(messages, timeoutMs) {
+async function callModel(messages, timeoutMs, temperature = 0.2) {
   const endpoint = `${config.baseUrl.replace(/\/+$/, "")}/chat/completions`;
   const disableThinking = endpoint.includes("aliyuncs.com") || /qwen3/i.test(config.model);
   const response = await fetch(endpoint, {
@@ -105,7 +105,7 @@ async function callModel(messages, timeoutMs) {
     body: JSON.stringify({
       model: config.model,
       messages,
-      temperature: 0.2,
+      temperature,
       response_format: { type: "json_object" },
       ...(disableThinking ? { enable_thinking: false } : {}),
     }),
@@ -284,10 +284,10 @@ async function runCase(testCase, systemPrompt) {
   };
   let attempt = 1;
 
-  async function timedCall(messages, field, timeoutMs) {
+  async function timedCall(messages, field, timeoutMs, temperature = 0.2) {
     const attemptStarted = performance.now();
     try {
-      return await callModel(messages, timeoutMs);
+      return await callModel(messages, timeoutMs, temperature);
     } finally {
       result[field] = elapsed(attemptStarted);
     }
@@ -310,14 +310,19 @@ async function runCase(testCase, systemPrompt) {
       result.retried = true;
       attempt = 2;
       const retryMessages = [
-        ...messages,
-        { role: "assistant", content },
+        messages[0],
         {
           role: "user",
-          content: `上次结果未通过契约校验：${parsed.feedback}\n不要沿用残缺数组，请重新输出完整的单行合法 JSON：必须包含 3 条 observedSymptoms（s1~s3）、3 个完整 hypotheses（h1~h3，且每个 minimalControl 为含 action/paramDiff/expectedOutcome 的对象）和 2 道 questions（q1~q2，每题末选项为全 0「不确定」）。只返回 JSON，不要解释。`,
+          content: [
+            ...messages[1].content,
+            {
+              type: "text",
+              text: `【契约纠偏重生成】上次输出未通过校验：${parsed.feedback}。请重新完整生成单行紧凑 JSON，必须包含 3 条 observedSymptoms（s1~s3）、3 个完整 hypotheses（h1~h3，minimalControl 为对象）和 2 道 questions（q1~q2，末选项全 0「不确定」）。`,
+            },
+          ],
         },
       ];
-      content = await timedCall(retryMessages, "retryAttemptMs", Math.max(5_000, Math.round(29_500 - elapsedMs)));
+      content = await timedCall(retryMessages, "retryAttemptMs", Math.max(5_000, Math.round(29_500 - elapsedMs)), 0.35);
       result.diagnosedHypotheses = summarizeHypotheses(content);
       const retryRepairsApplied = [];
       parsed = parseDiagnosisContent(content, retryRepairsApplied);

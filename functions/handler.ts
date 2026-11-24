@@ -176,6 +176,7 @@ async function callModel(
   config: NonNullable<ReturnType<typeof visionConfig>>,
   fetcher: Fetcher,
   timeoutMs: number,
+  temperature = 0.2,
 ): Promise<string> {
   const disableThinking = config.endpoint.includes("aliyuncs.com") || /qwen3/i.test(config.model);
   const response = await fetcher(config.endpoint, {
@@ -187,7 +188,7 @@ async function callModel(
     body: JSON.stringify({
       model: config.model,
       messages,
-      temperature: 0.2,
+      temperature,
       response_format: { type: "json_object" },
       ...(disableThinking ? { enable_thinking: false } : {}),
     }),
@@ -292,15 +293,20 @@ export function createHandler(options: HandlerOptions = {}) {
       const elapsedMs = Date.now() - diagnosisStartedAt;
       if (!parsed.ok && elapsedMs < 18_000) {
         const retryMessages: ChatMessage[] = [
-          ...messages,
-          { role: "assistant", content },
+          messages[0],
           {
             role: "user",
-            content: `上次结果未通过契约校验：${parsed.feedback}\n不要沿用残缺数组，请重新输出完整的单行合法 JSON：必须包含 3 条 observedSymptoms（s1~s3）、3 个完整 hypotheses（h1~h3，且每个 minimalControl 为含 action/paramDiff/expectedOutcome 的对象）和 2 道 questions（q1~q2，每题末选项为全 0「不确定」）。只返回 JSON，不要解释。`,
+            content: [
+              ...userContent,
+              {
+                type: "text",
+                text: `【契约纠偏重生成】上次输出未通过校验：${parsed.feedback}。请重新完整生成单行紧凑 JSON，必须包含 3 条 observedSymptoms（s1~s3）、3 个完整 hypotheses（h1~h3，minimalControl 为对象）和 2 道 questions（q1~q2，末选项全 0「不确定」）。`,
+              },
+            ],
           },
         ];
         try {
-          content = await callModel(retryMessages, config, fetcher, Math.max(5_000, Math.round(29_500 - elapsedMs)));
+          content = await callModel(retryMessages, config, fetcher, Math.max(5_000, Math.round(29_500 - elapsedMs)), 0.35);
           parsed = parseDiagnosisContent(content);
         } catch {
           return errorResponse("diagnosis_parse_failed", 502);

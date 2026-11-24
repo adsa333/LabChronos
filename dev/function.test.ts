@@ -240,15 +240,16 @@ Deno.test("diagnose disables thinking only for Qwen3 or Aliyun endpoints", async
 
 Deno.test("diagnose retries once with validation feedback", async () => {
   let calls = 0;
-  let retryMessageCount = 0;
+  const temperatures: number[] = [];
+  let retryMessages: Array<{ role: string; content: unknown }> = [];
   const handler = createHandler({
     env: configuredEnv,
     fetch: async (_input, init) => {
       calls += 1;
       const requestBody = JSON.parse(String(init?.body));
-      assertEquals(requestBody.temperature, 0.2);
+      temperatures.push(requestBody.temperature);
       assertEquals(requestBody.response_format.type, "json_object");
-      if (calls === 2) retryMessageCount = requestBody.messages.length;
+      if (calls === 2) retryMessages = requestBody.messages;
       const content = calls === 1 ? "{}" : JSON.stringify(validDiagnosis);
       return Response.json({ choices: [{ message: { content } }] });
     },
@@ -261,7 +262,12 @@ Deno.test("diagnose retries once with validation feedback", async () => {
   assertEquals(response.status, 200);
   assertEquals(response.headers.get("x-diagnosis-model"), "test-vision");
   assertEquals(calls, 2);
-  assertEquals(retryMessageCount, 4);
+  assertEquals(temperatures.join(","), "0.2,0.35");
+  assertEquals(retryMessages.length, 2);
+  assertEquals(retryMessages.map((message) => message.role).join(","), "system,user");
+  assertEquals(retryMessages.some((message) => message.role === "assistant"), false);
+  assert(JSON.stringify(retryMessages[1]?.content).includes("【契约纠偏重生成】"));
+  assert(JSON.stringify(retryMessages[1]?.content).includes("Epoch 14 loss=nan"));
   assertEquals((await response.json()).caseTitle, "训练损失发散");
 });
 
