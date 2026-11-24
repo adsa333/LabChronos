@@ -9,7 +9,12 @@
       "detail": "每次快速边沿后均出现数次逐渐衰减的振荡，随后回到稳定电平。",
       "severity": "critical",
       "source": "image",
-      "bbox": [0.281, 0.204, 0.072, 0.2312]
+      "bbox": [
+        0.281,
+        0.204,
+        0.072,
+        0.2312
+      ]
     },
     {
       "id": "s2",
@@ -17,19 +22,24 @@
       "detail": "振荡只紧跟快速边沿出现，不是整个时间轴上的连续纹波。",
       "severity": "warning",
       "source": "image",
-      "bbox": [0.281, 0.204, 0.1147, 0.2176]
+      "bbox": [
+        0.281,
+        0.204,
+        0.1147,
+        0.2176
+      ]
     },
     {
       "id": "s3",
       "label": "无源探头使用约 10 cm 接地夹线",
-      "detail": "探头地通过长夹线接到远离测试点的接地点，形成较大的探头接地回路。",
+      "detail": "探头地通过约 10 cm 长夹线接到远离测试点的接地点，形成较大接地回路；rise_time=4ns、ringing_freq=24MHz、probe_capacitance=12pF、source_impedance=50ohm。",
       "severity": "warning",
       "source": "log"
     },
     {
       "id": "s4",
-      "label": "采样率为 500 MSa/s，未见削平或 overrange 标记",
-      "detail": "输入为 1 MHz 方波，当前时基下可分辨边沿细节，稳定电平未出现顶部削平，通道也未报告 ADC overrange。",
+      "label": "采样率为 500 MSa/s，稳态 2 Vpp 且未触发 overrange",
+      "detail": "输入方波 steady_state_amplitude=2Vpp (±1V)，peak_to_peak_with_overshoot=4Vpp (±2V)，input_range=±4V；当前可分辨边沿细节，稳定电平未削平，ADC overrange=false。",
       "severity": "warning",
       "source": "log"
     }
@@ -38,9 +48,13 @@
     {
       "id": "h1",
       "title": "探头接地线过长形成谐振回路",
-      "mechanism": "长接地引线引入附加回路电感，与探头输入电容形成谐振，快速边沿激励后产生过冲和阻尼振铃。",
+      "mechanism": "长接地引线引入附加回路电感，与探头输入电容形成谐振；4 ns 快边沿激励 24 MHz 阻尼振铃，在波形上产生过冲和衰减振荡。",
       "priorScore": 40,
-      "evidenceFor": ["s1", "s2", "s3"],
+      "evidenceFor": [
+        "s1",
+        "s2",
+        "s3"
+      ],
       "subCauses": [
         "接地引线过长增加探头回路电感",
         "探头输入电容与回路电感形成 LC 谐振"
@@ -62,17 +76,20 @@
       "title": "输入超出量程导致削波",
       "mechanism": "输入超过采集前端的线性范围会造成顶部削平，但单纯削波通常不能解释边沿后的阻尼振荡。",
       "priorScore": 15,
-      "evidenceFor": ["s1", "s4"],
+      "evidenceFor": [
+        "s1",
+        "s4"
+      ],
       "subCauses": [
         "垂直量程或探头衰减设置不当",
         "输入幅度超过采集前端的线性范围"
       ],
       "minimalControl": {
-        "action": "只将通道输入量程从 ±2 V 扩大到 ±10 V，保持探头、接地方式和被测信号不变。",
+        "action": "只将通道输入量程从 ±4 V 扩大到 ±10 V，保持探头、接地方式和被测信号不变。",
         "paramDiff": [
           {
             "key": "通道输入量程",
-            "before": "±2 V",
+            "before": "±4 V",
             "after": "±10 V"
           }
         ],
@@ -84,7 +101,10 @@
       "title": "源端与互连阻抗不匹配",
       "mechanism": "源端、互连和负载之间的阻抗不匹配会产生反射，在快速边沿处形成过冲或回波。",
       "priorScore": 25,
-      "evidenceFor": ["s1", "s2"],
+      "evidenceFor": [
+        "s1",
+        "s2"
+      ],
       "subCauses": [
         "互连反射在边沿处形成过冲",
         "源端或负载端缺少合适的阻抗端接"
@@ -106,7 +126,10 @@
       "title": "采样率不足或探头带宽限制",
       "mechanism": "采样不足会造成边沿重建误差，带宽限制会改变上升时间，但通常不会产生由接地环路决定的阻尼谐振。",
       "priorScore": 20,
-      "evidenceFor": ["s1", "s4"],
+      "evidenceFor": [
+        "s1",
+        "s4"
+      ],
       "subCauses": [
         "采样率不足导致边沿细节失真或混叠",
         "探头或示波器带宽不足改变测得的边沿形态"
@@ -131,16 +154,31 @@
       "howToCheck": "展开单个上升沿和后续高电平区域，比较边沿附近与稳定段的波形；持续电源纹波通常不会只锁相在边沿之后。",
       "options": [
         {
-          "label": "是，只在边沿后出现阻尼振铃",
-          "scoreDelta": { "h1": 15, "h2": -5, "h3": 5, "h4": -10 }
+          "label": "否，稳定电平段也存在连续周期波动",
+          "scoreDelta": {
+            "h1": -20,
+            "h2": 0,
+            "h3": -10,
+            "h4": 25
+          }
         },
         {
-          "label": "否，稳定电平段也存在连续周期波动",
-          "scoreDelta": { "h1": -20, "h2": 0, "h3": -10, "h4": 25 }
+          "label": "是，只在边沿后出现阻尼振铃",
+          "scoreDelta": {
+            "h1": 15,
+            "h2": -5,
+            "h3": 5,
+            "h4": -10
+          }
         },
         {
           "label": "不确定",
-          "scoreDelta": { "h1": 0, "h2": 0, "h3": 0, "h4": 0 }
+          "scoreDelta": {
+            "h1": 0,
+            "h2": 0,
+            "h3": 0,
+            "h4": 0
+          }
         }
       ]
     },
@@ -151,15 +189,30 @@
       "options": [
         {
           "label": "是，过冲和振铃明显减弱",
-          "scoreDelta": { "h1": 25, "h2": -5, "h3": -20, "h4": -15 }
+          "scoreDelta": {
+            "h1": 25,
+            "h2": -5,
+            "h3": -20,
+            "h4": -15
+          }
         },
         {
           "label": "否，振铃幅度和频率基本不变",
-          "scoreDelta": { "h1": -35, "h2": 5, "h3": 20, "h4": 15 }
+          "scoreDelta": {
+            "h1": -35,
+            "h2": 5,
+            "h3": 20,
+            "h4": 15
+          }
         },
         {
           "label": "不确定",
-          "scoreDelta": { "h1": 0, "h2": 0, "h3": 0, "h4": 0 }
+          "scoreDelta": {
+            "h1": 0,
+            "h2": 0,
+            "h3": 0,
+            "h4": 0
+          }
         }
       ]
     }

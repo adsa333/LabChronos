@@ -1,15 +1,16 @@
 2026-11-14 10:00:00 GEL_PREP agarose=0.8% buffer=1x_TAE stain=GelRed same_batch=true
-2026-11-14 10:02:00 SAMPLE type=plasmid_DNA source=same_batch_for_all_lanes
+2026-11-14 10:02:00 SAMPLE type=linearized_plasmid_3.5kb source=same_batch_for_all_lanes
+2026-11-14 10:02:01 SAMPLE_SPEC total_load_volume=10uL loading_dye=1x comb_width=5mm quantification=NanoDrop_A260
 2026-11-14 10:03:00 LANE_1 content=DNA_ladder
-2026-11-14 10:03:01 LANE_2 dna_mass=100ng sample=same_batch
-2026-11-14 10:03:02 LANE_3 dna_mass=250ng sample=same_batch
-2026-11-14 10:03:03 LANE_4 dna_mass=500ng sample=same_batch
-2026-11-14 10:03:04 LANE_5 dna_mass=500ng sample=same_batch replicate_of=LANE_4
-2026-11-14 10:03:05 LANE_6 dna_mass=100ng sample=same_batch replicate_of=LANE_2
+2026-11-14 10:03:01 LANE_2 dna_mass=100ng sample=same_batch total_load_volume=10uL
+2026-11-14 10:03:02 LANE_3 dna_mass=250ng sample=same_batch total_load_volume=10uL
+2026-11-14 10:03:03 LANE_4 dna_mass=500ng sample=same_batch total_load_volume=10uL
+2026-11-14 10:03:04 LANE_5 dna_mass=500ng sample=same_batch replicate_of=LANE_4 total_load_volume=10uL
+2026-11-14 10:03:05 LANE_6 dna_mass=100ng sample=same_batch replicate_of=LANE_2 total_load_volume=10uL
 2026-11-14 10:05:00 RUN voltage=100V duration=35min buffer=1x_TAE shared_buffer=true
 2026-11-14 10:40:00 OBSERVE lane_2=distinct_main_band minimal_tail
-2026-11-14 10:40:01 OBSERVE lane_3=bright_main_band moderate_tail
-2026-11-14 10:40:02 OBSERVE lane_4=very_bright_wide_main_band strong_comet_tail
-2026-11-14 10:40:03 OBSERVE lane_5=very_bright_wide_main_band strong_comet_tail
+2026-11-14 10:40:01 OBSERVE lane_3=bright_main_band moderate_tail_toward_loading_well
+2026-11-14 10:40:02 OBSERVE lane_4=very_bright_wide_main_band strong_comet_tail_toward_loading_well
+2026-11-14 10:40:03 OBSERVE lane_5=very_bright_wide_main_band strong_comet_tail_toward_loading_well
 2026-11-14 10:40:04 OBSERVE lane_6=distinct_main_band minimal_tail
-2026-11-14 10:40:05 SUMMARY smearing_increases_with_loading_mass=true main_bands_still_visible=true
+2026-11-14 10:40:05 SUMMARY smearing_increases_with_loading_mass=true tail_direction=toward_loading_well main_bands_still_visible=true

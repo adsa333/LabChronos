@@ -53,13 +53,13 @@ def normalized_data_bbox(fig, ax, corners):
 def generate_ai_training():
     fig = create_figure(
         "Training failure evidence — Loss NaN",
-        "AMP enabled · no gradient clipping · fixed data order (seed 42)",
+        "SGD · lr=0.05 · AMP enabled · no gradient clipping · fixed data order (seed 42)",
     )
     loss_ax = fig.add_axes([0.065, 0.16, 0.405, 0.66])
     grad_ax = fig.add_axes([0.56, 0.16, 0.405, 0.66])
     epochs = np.arange(1, 15)
     loss = np.array([4.2, 3.35, 2.85, 2.55, 2.4, 2.2, 2.05, 1.9, 1.75, 1.5, 1.42, 1.31, 1.2, 9.8])
-    grad = np.array([0.82, 0.9, 0.95, 1.02, 1.1, 1.2, 1.32, 1.4, 1.5, 1.62, 1.9, 3.8, 128.6, 1_000_000])
+    grad = np.array([0.82, 0.9, 0.95, 1.02, 1.1, 1.2, 1.32, 1.4, 1.5, 1.62, 1.9, 3.8, 128.6, 48_500])
 
     style_axis(loss_ax, "Training Loss")
     loss_ax.set_xlim(1, 20)
@@ -75,20 +75,22 @@ def generate_ai_training():
 
     style_axis(grad_ax, "Gradient norm (log scale)")
     grad_ax.set_xlim(1, 20)
-    grad_ax.set_ylim(0.1, 2_000_000)
+    grad_ax.set_ylim(0.1, 100_000)
     grad_ax.set_yscale("log")
     grad_ax.set_xlabel("Epoch")
     grad_ax.set_ylabel("grad_norm")
     grad_ax.plot(epochs, grad, color=AMBER, linewidth=3, marker="o", markersize=4)
-    grad_ax.scatter([14], [1_000_000], s=100, color=RED, zorder=5)
-    grad_ax.annotate("inf at Epoch 14", xy=(14, 1_000_000), xytext=(14.8, 180_000), color=RED, fontsize=12, fontweight="bold", arrowprops={"arrowstyle": "->", "color": RED})
+    grad_ax.scatter([14], [48_500], s=100, color=RED, zorder=5)
+    grad_ax.annotate("4.85e4 (finite, not skipped)", xy=(14, 48_500), xytext=(9.8, 18_000), color=RED, fontsize=12, fontweight="bold", arrowprops={"arrowstyle": "->", "color": RED})
     grad_ax.annotate("128.6", xy=(13, 128.6), xytext=(10.8, 900), color=AMBER, fontsize=11, arrowprops={"arrowstyle": "->", "color": AMBER})
 
     fig.text(0.065, 0.075, "Epoch 13: loss=1.20, grad_norm=128.6", color=MUTED, fontsize=12, family="monospace")
-    fig.text(0.56, 0.075, "Epoch 14: grad_norm=inf → Loss NaN", color=RED, fontsize=12, family="monospace", fontweight="bold")
+    fig.text(0.56, 0.095, "Epoch 14: grad_norm=48500 (unclipped step)", color=RED, fontsize=10.5, family="monospace", fontweight="bold")
+    fig.text(0.56, 0.065, "-> Epoch 15 Loss NaN", color=RED, fontsize=10.5, family="monospace", fontweight="bold")
     fig.text(0.065, 0.04, "Observed order: gradient anomaly precedes parameter and loss failure.", color=MUTED, fontsize=11)
     bbox = normalized_data_bbox(fig, loss_ax, [(13.3, 10.8), (19.6, 0.5)])
     fig.savefig(OUTPUT_DIR / "ai-training-nan.png", dpi=100, facecolor=BG)
+    fig.savefig(OUTPUT_DIR / "ai-training-nan.svg", facecolor=BG)
     plt.close(fig)
     return {"s1": bbox}
 
@@ -108,13 +110,13 @@ def generate_gel():
     lanes = [(340, 100), (540, 250), (740, 500), (940, 500), (1140, 100)]
     for cx, mass in lanes:
         load = mass / 500
-        gel += band(cx, 300, 34 + 18 * load, 9 + 6 * load, 0.5 + 0.65 * load)
-        tail_start = 315
-        tail_mask = yy >= tail_start
-        spread = 16 + 28 * load + 0.035 * np.maximum(yy - tail_start, 0)
-        tail = (0.08 + 0.7 * load) * np.exp(-0.5 * ((xx - cx) / spread) ** 2) * np.exp(-np.maximum(yy - tail_start, 0) / (130 + 100 * load))
+        gel += band(cx, 470, 34 + 18 * load, 9 + 6 * load, 0.5 + 0.65 * load)
+        tail_start = 460
+        tail_mask = yy <= tail_start
+        spread = 16 + 28 * load + 0.035 * np.maximum(tail_start - yy, 0)
+        tail = (0.08 + 0.7 * load) * np.exp(-0.5 * ((xx - cx) / spread) ** 2) * np.exp(-np.maximum(tail_start - yy, 0) / (130 + 100 * load))
         gel += tail * tail_mask
-        gel += band(cx, 340, 28 + 25 * load, 25 + 25 * load, 0.12 + 0.2 * load)
+        gel += band(cx, 440, 28 + 25 * load, 25 + 25 * load, 0.12 + 0.2 * load)
 
     gel_image = Image.fromarray(np.uint8(np.clip(gel / gel.max(), 0, 1) * 255), mode="L").filter(ImageFilter.GaussianBlur(2.2))
     gel = np.asarray(gel_image).astype(float) / 255
@@ -139,15 +141,16 @@ def generate_gel():
         ax.text(cx, 48, label, color=TEXT, fontsize=12, ha="center", family="monospace", fontweight="bold")
         ax.add_patch(plt.Rectangle((cx - 45, 72), 90, 28, facecolor="#020609", edgecolor="#31515B", linewidth=1.5))
     ax.text(340, 760, "narrow band", color=MUTED, fontsize=10, ha="center")
-    ax.text(540, 760, "moderate tail", color=MUTED, fontsize=10, ha="center")
-    ax.text(740, 760, "bright band + strong tail", color=MUTED, fontsize=10, ha="center")
+    ax.text(540, 760, "moderate upward tail", color=MUTED, fontsize=10, ha="center")
+    ax.text(740, 760, "strong upward tail", color=MUTED, fontsize=10, ha="center")
     ax.text(940, 760, "replicate", color=MUTED, fontsize=10, ha="center")
     ax.text(1140, 760, "narrow band", color=MUTED, fontsize=10, ha="center")
-    fig.text(0.05, 0.065, "Observation: strong main bands remain visible; smearing increases with DNA mass per lane.", color=MUTED, fontsize=12, family="monospace")
+    fig.text(0.05, 0.065, "Observation: strong main bands remain visible; smearing extends toward loading wells (high-MW side).", color=MUTED, fontsize=12, family="monospace")
 
-    s1 = normalized_data_bbox(fig, ax, [(665, 225), (1015, 700)])
-    s2 = normalized_data_bbox(fig, ax, [(690, 235), (790, 690)])
+    s1 = normalized_data_bbox(fig, ax, [(665, 170), (1015, 520)])
+    s2 = normalized_data_bbox(fig, ax, [(690, 185), (790, 515)])
     fig.savefig(OUTPUT_DIR / "gel-electrophoresis-smearing.png", dpi=100, facecolor=BG)
+    fig.savefig(OUTPUT_DIR / "gel-electrophoresis-smearing.svg", facecolor=BG)
     plt.close(fig)
     return {"s1": s1, "s2": s2}
 
@@ -155,7 +158,7 @@ def generate_gel():
 def generate_oscilloscope():
     fig = create_figure(
         "Oscilloscope evidence — edge-triggered damped ringing",
-        "CH1 · 1 MHz square wave · 500 MSa/s · 10× passive probe · 10 cm ground lead",
+        "CH1 · 1 MHz square wave · steady 2 Vpp · peaks 4 Vpp · 500 MSa/s · 24 MHz ringing",
     )
     ax = fig.add_axes([0.065, 0.15, 0.9, 0.68])
     t = np.linspace(0, 4, 5000)
@@ -178,12 +181,13 @@ def generate_oscilloscope():
     ax.axhline(-1, color=MUTED, linewidth=0.8, alpha=0.35)
     ax.annotate("Overshoot + damped ringing", xy=(1.03, 1.75), xytext=(1.35, 2.15), color=AMBER, fontsize=12, fontweight="bold", arrowprops={"arrowstyle": "->", "color": AMBER})
     ax.annotate("flat high level\nno continuous ripple", xy=(1.25, 1), xytext=(2.15, 1.55), color=MUTED, fontsize=11, arrowprops={"arrowstyle": "->", "color": MUTED})
-    ax.text(2.15, 1.25, "no flat-top clipping / no ADC overrange", color=MUTED, fontsize=11)
+    fig.text(0.70, 0.85, "no flat-top clipping / no ADC overrange", color=MUTED, fontsize=11)
     fig.text(0.065, 0.065, "Probe ground: 10 cm clip lead to a remote ground point · stable levels remain flat between transitions", color=MUTED, fontsize=11, family="monospace")
 
     s1 = normalized_data_bbox(fig, ax, [(0.96, 2.25), (1.28, 0.55)])
     s2 = normalized_data_bbox(fig, ax, [(0.96, 2.25), (1.47, 0.65)])
     fig.savefig(OUTPUT_DIR / "oscilloscope-ringing.png", dpi=100, facecolor=BG)
+    fig.savefig(OUTPUT_DIR / "oscilloscope-ringing.svg", facecolor=BG)
     plt.close(fig)
     return {"s1": s1, "s2": s2}
 
