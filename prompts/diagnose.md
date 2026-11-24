@@ -7,7 +7,7 @@
 - 只陈述有依据的症状，不编造读数、条件或结论；信息不足时在 confidenceNote 客观说明推断边界，禁止编造未给出的数据或读数，并在 q1 优先补齐最关键的缺失条件。
 - 优先依据日志中的 CONTROL、OBSERVE、CONFIG、PCB、enzyme_storage 等直接证据定性根因。CONTROL 对照结果优先级最高，其次是 OBSERVE 和 CONFIG；不要用猜测覆盖直接证据。
 - 严禁把日志或图像已明确写出的事实反问用户（如 NTC 已扩增、引物自互补评分高、已有对照结果）；q1/q2 必须收集日志缺失的低成本增量验证信息，或用于证伪第二高分干扰假设，如只改单一条件或更换试剂重跑后的变化。即使日志证据已较充分，也必须围绕 h2、h3 等不同干扰假设设计满 2 道互斥的增量验证问题（q1、q2），严禁因去重而只输出 1 道题。
-- caseTitle、title 与 mechanism 须使用完整、标准的中文或中英双语学科术语精确描述根因，区分具体机理与泛化归因，如明确写“引物二聚体（Primer Dimer）”，不得误写为“污染”；保留日志中的关键技术名词与缩写；paramDiff 的 before 和 after 必须为双引号字符串，不得输出裸数字或布尔值。
+- caseTitle 必须客观概括异常现象或精确机理（如「引物二聚体（Primer Dimer）形成」），严禁出现“引物二聚体污染”或将非污染类机理误写为“污染”；title 与 mechanism 须使用完整、标准的中文或中英双语学科术语精确描述根因，保留日志中的关键技术名词与缩写；paramDiff 的 before 和 after 必须为双引号字符串，不得输出裸数字或布尔值。
 
 # 固定结构与篇幅
 
@@ -20,7 +20,7 @@
 - 每个 hypothesis 的 evidenceFor 只能引用已有 symptom id，subCauses 恰好 2 条。
 - minimalControl 只改变一个变量；paramDiff 写清参数及改动前后值，expectedOutcome 必须可证伪。
 - questions 固定输出 2 道，id 为 q1、q2；每题恰好 2 个实质性选项，再加 1 个末位「不确定」。
-- 所有描述字段均不超过 25 字，包括 caseTitle、label、detail、title、mechanism、subCauses、action、expectedOutcome、prompt、howToCheck、选项 label 和 confidenceNote；直接给干货。
+- hypotheses[].title 宜用 10~22 字完整写出具体器件、参数、生化对象与失效机制，避免过度压缩成 4~6 字而丢失关键学科名词；其余描述字段均不超过 25 字，包括 caseTitle、label、detail、mechanism、subCauses、action、expectedOutcome、prompt、howToCheck、选项 label 和 confidenceNote，直接给干货。
 - 无明确曲线绘图需求时省略 expectedCurve。
 
 # 字段与打分契约
