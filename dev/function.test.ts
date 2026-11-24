@@ -240,16 +240,15 @@ Deno.test("diagnose disables thinking only for Qwen3 or Aliyun endpoints", async
 
 Deno.test("diagnose retries once with validation feedback", async () => {
   let calls = 0;
-  const temperatures: number[] = [];
-  let retryMessages: Array<{ role: string; content: unknown }> = [];
+  let retryMessageCount = 0;
   const handler = createHandler({
     env: configuredEnv,
     fetch: async (_input, init) => {
       calls += 1;
       const requestBody = JSON.parse(String(init?.body));
-      temperatures.push(requestBody.temperature);
+      assertEquals(requestBody.temperature, 0.2);
       assertEquals(requestBody.response_format.type, "json_object");
-      if (calls === 2) retryMessages = requestBody.messages;
+      if (calls === 2) retryMessageCount = requestBody.messages.length;
       const content = calls === 1 ? "{}" : JSON.stringify(validDiagnosis);
       return Response.json({ choices: [{ message: { content } }] });
     },
@@ -262,12 +261,7 @@ Deno.test("diagnose retries once with validation feedback", async () => {
   assertEquals(response.status, 200);
   assertEquals(response.headers.get("x-diagnosis-model"), "test-vision");
   assertEquals(calls, 2);
-  assertEquals(temperatures.join(","), "0.2,0.25");
-  assertEquals(retryMessages.length, 2);
-  assertEquals(retryMessages.map((message) => message.role).join(","), "system,user");
-  assertEquals(retryMessages.some((message) => message.role === "assistant"), false);
-  assert(JSON.stringify(retryMessages[1]?.content).includes("【契约纠偏重生成】"));
-  assert(JSON.stringify(retryMessages[1]?.content).includes("Epoch 14 loss=nan"));
+  assertEquals(retryMessageCount, 4);
   assertEquals((await response.json()).caseTitle, "训练损失发散");
 });
 
@@ -299,16 +293,10 @@ Deno.test("diagnose rounds fractional retry timeouts", async () => {
   }
 });
 
-Deno.test("diagnose stops after two retries of invalid results", async () => {
-  let calls = 0;
-  const temperatures: number[] = [];
+Deno.test("diagnose returns a sanitized parse error after two invalid results", async () => {
   const handler = createHandler({
     env: configuredEnv,
-    fetch: async (_input, init) => {
-      calls += 1;
-      temperatures.push(JSON.parse(String(init?.body)).temperature);
-      return Response.json({ choices: [{ message: { content: "not json" } }] });
-    },
+    fetch: async () => Response.json({ choices: [{ message: { content: "not json" } }] }),
   });
   const response = await handler(new Request("http://local/api/diagnose", {
     method: "POST",
@@ -316,8 +304,6 @@ Deno.test("diagnose stops after two retries of invalid results", async () => {
     body: JSON.stringify({ logText: "loss=nan" }),
   }));
   assertEquals(response.status, 502);
-  assertEquals(calls, 3);
-  assertEquals(temperatures.join(","), "0.2,0.25,0.3");
   const body = await response.json();
   assertEquals(body.error, "diagnosis_parse_failed");
   assertEquals(JSON.stringify(body).includes("test-key"), false);

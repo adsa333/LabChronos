@@ -20,7 +20,7 @@ export const SYSTEM_PROMPT = `# 角色
 - 每个 hypothesis 的 evidenceFor 只能引用已有 symptom id，subCauses 恰好 2 条。
 - minimalControl 只改变一个变量；paramDiff 写清参数及改动前后值，expectedOutcome 必须可证伪。
 - questions 固定输出 2 道，id 为 q1、q2；每题恰好 2 个实质性选项，再加 1 个末位「不确定」。
-- hypotheses[].title 宜用 10~22 字完整写出具体器件、参数、生化对象与失效机制，避免过度压缩成 4~6 字而丢失关键学科名词；其余描述字段均不超过 25 字，包括 caseTitle、label、detail、mechanism、subCauses、action、expectedOutcome、prompt、howToCheck、选项 label 和 confidenceNote，直接给干货。
+- 所有描述字段均不超过 25 字，包括 caseTitle、label、detail、title、mechanism、subCauses、action、expectedOutcome、prompt、howToCheck、选项 label 和 confidenceNote；直接给干货。
 - 无明确曲线绘图需求时省略 expectedCurve。
 
 # 字段与打分契约

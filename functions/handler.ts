@@ -176,7 +176,6 @@ async function callModel(
   config: NonNullable<ReturnType<typeof visionConfig>>,
   fetcher: Fetcher,
   timeoutMs: number,
-  temperature = 0.2,
 ): Promise<string> {
   const disableThinking = config.endpoint.includes("aliyuncs.com") || /qwen3/i.test(config.model);
   const response = await fetcher(config.endpoint, {
@@ -188,7 +187,7 @@ async function callModel(
     body: JSON.stringify({
       model: config.model,
       messages,
-      temperature,
+      temperature: 0.2,
       response_format: { type: "json_object" },
       ...(disableThinking ? { enable_thinking: false } : {}),
     }),
@@ -290,30 +289,18 @@ export function createHandler(options: HandlerOptions = {}) {
       }
 
       let parsed = parseDiagnosisContent(content);
-      for (let retryCount = 0; !parsed.ok && retryCount < 2; retryCount += 1) {
-        const elapsedMs = Date.now() - diagnosisStartedAt;
-        if (elapsedMs >= 20_000) break;
+      const elapsedMs = Date.now() - diagnosisStartedAt;
+      if (!parsed.ok && elapsedMs < 18_000) {
         const retryMessages: ChatMessage[] = [
-          messages[0],
+          ...messages,
+          { role: "assistant", content },
           {
             role: "user",
-            content: [
-              ...userContent,
-              {
-                type: "text",
-                text: `【契约纠偏重生成】上次输出未通过校验：${parsed.feedback}。请重新完整生成单行紧凑 JSON，必须包含 3 条 observedSymptoms（s1~s3）、3 个完整 hypotheses（h1~h3，minimalControl 为对象）和 2 道 questions（q1~q2，末选项全 0「不确定」）。`,
-              },
-            ],
+            content: `上次结果未通过契约校验：${parsed.feedback}\n请修复全部问题并只返回合法 JSON，不要解释。`,
           },
         ];
         try {
-          content = await callModel(
-            retryMessages,
-            config,
-            fetcher,
-            Math.max(5_000, Math.round(29_500 - elapsedMs)),
-            retryCount === 0 ? 0.25 : 0.3,
-          );
+          content = await callModel(retryMessages, config, fetcher, Math.max(5_000, Math.round(29_500 - elapsedMs)));
           parsed = parseDiagnosisContent(content);
         } catch {
           return errorResponse("diagnosis_parse_failed", 502);

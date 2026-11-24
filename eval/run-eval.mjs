@@ -93,7 +93,7 @@ function buildMessages(input, systemPrompt) {
   ];
 }
 
-async function callModel(messages, timeoutMs, temperature = 0.2) {
+async function callModel(messages, timeoutMs) {
   const endpoint = `${config.baseUrl.replace(/\/+$/, "")}/chat/completions`;
   const disableThinking = endpoint.includes("aliyuncs.com") || /qwen3/i.test(config.model);
   const response = await fetch(endpoint, {
@@ -105,7 +105,7 @@ async function callModel(messages, timeoutMs, temperature = 0.2) {
     body: JSON.stringify({
       model: config.model,
       messages,
-      temperature,
+      temperature: 0.2,
       response_format: { type: "json_object" },
       ...(disableThinking ? { enable_thinking: false } : {}),
     }),
@@ -283,16 +283,13 @@ async function runCase(testCase, systemPrompt) {
     error: null,
   };
   let attempt = 1;
-  let retryAttemptTotalMs = 0;
 
-  async function timedCall(messages, field, timeoutMs, temperature = 0.2) {
+  async function timedCall(messages, field, timeoutMs) {
     const attemptStarted = performance.now();
     try {
-      return await callModel(messages, timeoutMs, temperature);
+      return await callModel(messages, timeoutMs);
     } finally {
-      const durationMs = elapsed(attemptStarted);
-      if (field === "retryAttemptMs") retryAttemptTotalMs += durationMs;
-      else result[field] = durationMs;
+      result[field] = elapsed(attemptStarted);
     }
   }
 
@@ -307,35 +304,24 @@ async function runCase(testCase, systemPrompt) {
     result.repairedFirstPass = parsed.ok;
     result.firstPass = parsed.ok;
 
-    for (let retryCount = 0; !parsed.ok && retryCount < 2; retryCount += 1) {
-      const currentElapsedMs = performance.now() - started;
-      if (currentElapsedMs >= 20_000) break;
-      if (result.firstParseFeedback === null) result.firstParseFeedback = parsed.feedback;
+    const elapsedMs = performance.now() - started;
+    if (!parsed.ok && elapsedMs < 18_000) {
+      result.firstParseFeedback = parsed.feedback;
       result.retried = true;
       attempt = 2;
       const retryMessages = [
-        messages[0],
+        ...messages,
+        { role: "assistant", content },
         {
           role: "user",
-          content: [
-            ...messages[1].content,
-            {
-              type: "text",
-              text: `【契约纠偏重生成】上次输出未通过校验：${parsed.feedback}。请重新完整生成单行紧凑 JSON，必须包含 3 条 observedSymptoms（s1~s3）、3 个完整 hypotheses（h1~h3，minimalControl 为对象）和 2 道 questions（q1~q2，末选项全 0「不确定」）。`,
-            },
-          ],
+          content: `上次结果未通过契约校验：${parsed.feedback}\n请修复全部问题并只返回合法 JSON，不要解释。`,
         },
       ];
-      content = await timedCall(
-        retryMessages,
-        "retryAttemptMs",
-        Math.max(5_000, Math.round(29_500 - currentElapsedMs)),
-        retryCount === 0 ? 0.25 : 0.3,
-      );
+      content = await timedCall(retryMessages, "retryAttemptMs", Math.max(5_000, Math.round(29_500 - elapsedMs)));
       result.diagnosedHypotheses = summarizeHypotheses(content);
       const retryRepairsApplied = [];
       parsed = parseDiagnosisContent(content, retryRepairsApplied);
-      result.repairsApplied = [...new Set([...result.repairsApplied, ...retryRepairsApplied])];
+      if (parsed.ok) result.repairsApplied = [...new Set([...result.repairsApplied, ...retryRepairsApplied])];
     }
 
     if (!parsed.ok) {
@@ -352,7 +338,6 @@ async function runCase(testCase, systemPrompt) {
     return result;
   } finally {
     result.durationMs = elapsed(started);
-    if (retryAttemptTotalMs > 0) result.retryAttemptMs = retryAttemptTotalMs;
     result.scoreDeltaModified = result.repairsApplied.some((name) => SCORE_DELTA_REPAIRS.has(name));
   }
 }
