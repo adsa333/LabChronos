@@ -312,7 +312,7 @@ export function createHandler(options: HandlerOptions = {}) {
             config,
             fetcher,
             Math.max(5_000, Math.round(29_500 - elapsedMs)),
-            retryCount === 0 ? 0.35 : 0.5,
+            retryCount === 0 ? 0.25 : 0.3,
           );
           parsed = parseDiagnosisContent(content);
         } catch {

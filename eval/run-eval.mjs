@@ -330,7 +330,7 @@ async function runCase(testCase, systemPrompt) {
         retryMessages,
         "retryAttemptMs",
         Math.max(5_000, Math.round(29_500 - currentElapsedMs)),
-        retryCount === 0 ? 0.35 : 0.5,
+        retryCount === 0 ? 0.25 : 0.3,
       );
       result.diagnosedHypotheses = summarizeHypotheses(content);
       const retryRepairsApplied = [];

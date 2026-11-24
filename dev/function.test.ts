@@ -262,7 +262,7 @@ Deno.test("diagnose retries once with validation feedback", async () => {
   assertEquals(response.status, 200);
   assertEquals(response.headers.get("x-diagnosis-model"), "test-vision");
   assertEquals(calls, 2);
-  assertEquals(temperatures.join(","), "0.2,0.35");
+  assertEquals(temperatures.join(","), "0.2,0.25");
   assertEquals(retryMessages.length, 2);
   assertEquals(retryMessages.map((message) => message.role).join(","), "system,user");
   assertEquals(retryMessages.some((message) => message.role === "assistant"), false);
@@ -317,7 +317,7 @@ Deno.test("diagnose stops after two retries of invalid results", async () => {
   }));
   assertEquals(response.status, 502);
   assertEquals(calls, 3);
-  assertEquals(temperatures.join(","), "0.2,0.35,0.5");
+  assertEquals(temperatures.join(","), "0.2,0.25,0.3");
   const body = await response.json();
   assertEquals(body.error, "diagnosis_parse_failed");
   assertEquals(JSON.stringify(body).includes("test-key"), false);
