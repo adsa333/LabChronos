@@ -299,10 +299,16 @@ Deno.test("diagnose rounds fractional retry timeouts", async () => {
   }
 });
 
-Deno.test("diagnose returns a sanitized parse error after two invalid results", async () => {
+Deno.test("diagnose stops after two retries of invalid results", async () => {
+  let calls = 0;
+  const temperatures: number[] = [];
   const handler = createHandler({
     env: configuredEnv,
-    fetch: async () => Response.json({ choices: [{ message: { content: "not json" } }] }),
+    fetch: async (_input, init) => {
+      calls += 1;
+      temperatures.push(JSON.parse(String(init?.body)).temperature);
+      return Response.json({ choices: [{ message: { content: "not json" } }] });
+    },
   });
   const response = await handler(new Request("http://local/api/diagnose", {
     method: "POST",
@@ -310,6 +316,8 @@ Deno.test("diagnose returns a sanitized parse error after two invalid results", 
     body: JSON.stringify({ logText: "loss=nan" }),
   }));
   assertEquals(response.status, 502);
+  assertEquals(calls, 3);
+  assertEquals(temperatures.join(","), "0.2,0.35,0.5");
   const body = await response.json();
   assertEquals(body.error, "diagnosis_parse_failed");
   assertEquals(JSON.stringify(body).includes("test-key"), false);

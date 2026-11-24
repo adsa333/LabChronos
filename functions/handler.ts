@@ -290,8 +290,9 @@ export function createHandler(options: HandlerOptions = {}) {
       }
 
       let parsed = parseDiagnosisContent(content);
-      const elapsedMs = Date.now() - diagnosisStartedAt;
-      if (!parsed.ok && elapsedMs < 18_000) {
+      for (let retryCount = 0; !parsed.ok && retryCount < 2; retryCount += 1) {
+        const elapsedMs = Date.now() - diagnosisStartedAt;
+        if (elapsedMs >= 20_000) break;
         const retryMessages: ChatMessage[] = [
           messages[0],
           {
@@ -306,7 +307,13 @@ export function createHandler(options: HandlerOptions = {}) {
           },
         ];
         try {
-          content = await callModel(retryMessages, config, fetcher, Math.max(5_000, Math.round(29_500 - elapsedMs)), 0.35);
+          content = await callModel(
+            retryMessages,
+            config,
+            fetcher,
+            Math.max(5_000, Math.round(29_500 - elapsedMs)),
+            retryCount === 0 ? 0.35 : 0.5,
+          );
           parsed = parseDiagnosisContent(content);
         } catch {
           return errorResponse("diagnosis_parse_failed", 502);

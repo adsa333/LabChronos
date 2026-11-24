@@ -283,13 +283,16 @@ async function runCase(testCase, systemPrompt) {
     error: null,
   };
   let attempt = 1;
+  let retryAttemptTotalMs = 0;
 
   async function timedCall(messages, field, timeoutMs, temperature = 0.2) {
     const attemptStarted = performance.now();
     try {
       return await callModel(messages, timeoutMs, temperature);
     } finally {
-      result[field] = elapsed(attemptStarted);
+      const durationMs = elapsed(attemptStarted);
+      if (field === "retryAttemptMs") retryAttemptTotalMs += durationMs;
+      else result[field] = durationMs;
     }
   }
 
@@ -303,10 +306,11 @@ async function runCase(testCase, systemPrompt) {
     result.repairsApplied = result.rawSchemaValid ? [] : repairsApplied;
     result.repairedFirstPass = parsed.ok;
     result.firstPass = parsed.ok;
-    const elapsedMs = performance.now() - started;
 
-    if (!parsed.ok && elapsedMs < 18_000) {
-      result.firstParseFeedback = parsed.feedback;
+    for (let retryCount = 0; !parsed.ok && retryCount < 2; retryCount += 1) {
+      const currentElapsedMs = performance.now() - started;
+      if (currentElapsedMs >= 20_000) break;
+      if (result.firstParseFeedback === null) result.firstParseFeedback = parsed.feedback;
       result.retried = true;
       attempt = 2;
       const retryMessages = [
@@ -322,11 +326,16 @@ async function runCase(testCase, systemPrompt) {
           ],
         },
       ];
-      content = await timedCall(retryMessages, "retryAttemptMs", Math.max(5_000, Math.round(29_500 - elapsedMs)), 0.35);
+      content = await timedCall(
+        retryMessages,
+        "retryAttemptMs",
+        Math.max(5_000, Math.round(29_500 - currentElapsedMs)),
+        retryCount === 0 ? 0.35 : 0.5,
+      );
       result.diagnosedHypotheses = summarizeHypotheses(content);
       const retryRepairsApplied = [];
       parsed = parseDiagnosisContent(content, retryRepairsApplied);
-      if (parsed.ok) result.repairsApplied = [...new Set([...result.repairsApplied, ...retryRepairsApplied])];
+      result.repairsApplied = [...new Set([...result.repairsApplied, ...retryRepairsApplied])];
     }
 
     if (!parsed.ok) {
@@ -343,6 +352,7 @@ async function runCase(testCase, systemPrompt) {
     return result;
   } finally {
     result.durationMs = elapsed(started);
+    if (retryAttemptTotalMs > 0) result.retryAttemptMs = retryAttemptTotalMs;
     result.scoreDeltaModified = result.repairsApplied.some((name) => SCORE_DELTA_REPAIRS.has(name));
   }
 }
