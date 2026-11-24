@@ -314,7 +314,7 @@ async function runCase(testCase, systemPrompt) {
         { role: "assistant", content },
         {
           role: "user",
-          content: `上次结果未通过契约校验：${parsed.feedback}\n请修复全部问题并只返回合法 JSON，不要解释。`,
+          content: `上次结果未通过契约校验：${parsed.feedback}\n不要沿用残缺数组，请重新输出完整的单行合法 JSON：必须包含 3 条 observedSymptoms（s1~s3）、3 个完整 hypotheses（h1~h3，且每个 minimalControl 为含 action/paramDiff/expectedOutcome 的对象）和 2 道 questions（q1~q2，每题末选项为全 0「不确定」）。只返回 JSON，不要解释。`,
         },
       ];
       content = await timedCall(retryMessages, "retryAttemptMs", Math.max(5_000, Math.round(29_500 - elapsedMs)));
