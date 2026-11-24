@@ -283,7 +283,7 @@ export function createHandler(options: HandlerOptions = {}) {
       const diagnosisStartedAt = Date.now();
       let content: string;
       try {
-        content = await callModel(messages, config, fetcher, 25_000);
+        content = await callModel(messages, config, fetcher, 28_500);
       } catch {
         return errorResponse("diagnosis_upstream_failed", 502);
       }

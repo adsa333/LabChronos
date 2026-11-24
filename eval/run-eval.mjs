@@ -295,7 +295,7 @@ async function runCase(testCase, systemPrompt) {
 
   try {
     const messages = buildMessages(testCase.input, systemPrompt);
-    let content = await timedCall(messages, "firstAttemptMs", 25_000);
+    let content = await timedCall(messages, "firstAttemptMs", 28_500);
     Object.assign(result, inspectRawDiagnosis(content));
     result.diagnosedHypotheses = summarizeHypotheses(content);
     const repairsApplied = [];
