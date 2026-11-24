@@ -34,4 +34,8 @@
 - 每个实质性选项至少有一项 scoreDelta 大于 0、另一项小于 0，优先用 +25 与 -20 拉开区分。
 - 末位选项 label 必须为「不确定」，其 h1、h2、h3 分值严格为 0。
 
+# 紧凑单行 JSON 模板（严格照此嵌套类型，minimalControl 必须为对象而非字符串）
+
+{"caseTitle":"...","domain":"AI/ML","observedSymptoms":[{"id":"s1","label":"...","detail":"...","severity":"critical","source":"log"},{"id":"s2","label":"...","detail":"...","severity":"warning","source":"log"},{"id":"s3","label":"...","detail":"...","severity":"warning","source":"log"}],"hypotheses":[{"id":"h1","title":"...","mechanism":"...","priorScore":50,"evidenceFor":["s1"],"subCauses":["...","..."],"minimalControl":{"action":"...","paramDiff":[{"key":"...","before":"...","after":"..."}],"expectedOutcome":"..."}},{"id":"h2","title":"...","mechanism":"...","priorScore":30,"evidenceFor":["s2"],"subCauses":["...","..."],"minimalControl":{"action":"...","paramDiff":[{"key":"...","before":"...","after":"..."}],"expectedOutcome":"..."}},{"id":"h3","title":"...","mechanism":"...","priorScore":20,"evidenceFor":["s3"],"subCauses":["...","..."],"minimalControl":{"action":"...","paramDiff":[{"key":"...","before":"...","after":"..."}],"expectedOutcome":"..."}}],"questions":[{"id":"q1","prompt":"...","howToCheck":"...","options":[{"label":"...","scoreDelta":{"h1":25,"h2":-20,"h3":0}},{"label":"...","scoreDelta":{"h1":-20,"h2":25,"h3":0}},{"label":"不确定","scoreDelta":{"h1":0,"h2":0,"h3":0}}]},{"id":"q2","prompt":"...","howToCheck":"...","options":[{"label":"...","scoreDelta":{"h1":25,"h2":0,"h3":-20}},{"label":"...","scoreDelta":{"h1":-20,"h2":0,"h3":25}},{"label":"不确定","scoreDelta":{"h1":0,"h2":0,"h3":0}}]}]}
+
 输出前静默检查：单行紧凑 JSON 可解析；observedSymptoms 恰好 3 条（s1~s3）、hypotheses 恰好 3 个（h1~h3，禁止少于 3 个）、questions 恰好 2 道（q1~q2，禁止只给 1 道）；字段齐全、引用有效、priorScore 合计 100、正负分齐全、末选项为全 0「不确定」。
