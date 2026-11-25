@@ -5,6 +5,7 @@ import type { CatalogFilter, CatalogItem } from '../components/CatalogRail'
 import CausalTree from '../components/CausalTree'
 import EvidencePanel from '../components/EvidencePanel'
 import NewCaseView from '../components/NewCaseView'
+import OnboardingGuide from '../components/OnboardingGuide'
 import RecapCardPreview from '../components/RecapCardPreview'
 import ShareToRoomDialog from '../components/ShareToRoomDialog'
 import TriagePanel from '../components/TriagePanel'
@@ -48,6 +49,15 @@ export default function Workbench({ theme, onToggleTheme, initialCaseId, initial
   const [recapCanSave, setRecapCanSave] = useState(true)
   const [pushOpen, setPushOpen] = useState(false)
   const [pushedRoom, setPushedRoom] = useState<MuseumRoom | null>(null)
+  const [tourOpen, setTourOpen] = useState(false)
+  const [tourSession, setTourSession] = useState(0)
+  const [tourPrevView, setTourPrevView] = useState(view)
+  const tourDismissedRef = useRef(false)
+
+  if (view !== tourPrevView) {
+    setTourPrevView(view)
+    if (view !== 'case') setTourOpen(false)
+  }
   const [hoveredSymptomId, setHoveredSymptomId] = useState<string | null>(null)
   const [hoveredHypothesisId, setHoveredHypothesisId] = useState<string | null>(null)
   const customCreatedAtRef = useRef(0)
@@ -110,6 +120,48 @@ export default function Workbench({ theme, onToggleTheme, initialCaseId, initial
       if (recapUrlRef.current) URL.revokeObjectURL(recapUrlRef.current)
     }
   }, [])
+
+  useEffect(() => {
+    if (view !== 'case') return
+    let done = false
+    try {
+      done = localStorage.getItem('labchronos.onboarding.v1') === 'done'
+    } catch {
+      done = false
+    }
+    if (done || tourDismissedRef.current) return
+    const timer = window.setTimeout(() => {
+      tourDismissedRef.current = true
+      try {
+        localStorage.setItem('labchronos.onboarding.v1', 'done')
+      } catch {
+        // localStorage 不可用时仅本次会话不再自动弹出
+      }
+      setTourOpen(true)
+    }, 700)
+    return () => window.clearTimeout(timer)
+  }, [view])
+
+  function closeTour() {
+    tourDismissedRef.current = true
+    try {
+      localStorage.setItem('labchronos.onboarding.v1', 'done')
+    } catch {
+      // localStorage 不可用时仅本次会话不再自动弹出
+    }
+    setTourOpen(false)
+    setRailOpen(false)
+  }
+
+  function handleTourStep(step: number) {
+    if (window.innerWidth < 1024) setRailOpen(step >= 3)
+  }
+
+  function reopenTour() {
+    tourDismissedRef.current = false
+    setTourSession((value) => value + 1)
+    setTourOpen(true)
+  }
 
   const allItems = useMemo<CatalogItem[]>(() => {
     const presetItems = presets.map((preset, index) => ({
@@ -480,9 +532,12 @@ export default function Workbench({ theme, onToggleTheme, initialCaseId, initial
             </span>
           </div>
           {view === 'case' && (
-            <span className={`font-mono-tab text-[10px] ${lockedId ? 'teal-text' : 'amber-text'}`}>
-              {lockedId ? '已锁定真因' : `已答 ${answeredCount}/${diagnosis.questions.length}`}
-            </span>
+            <div className="flex items-center gap-2">
+              <span className={`font-mono-tab text-[10px] ${lockedId ? 'teal-text' : 'amber-text'}`}>
+                {lockedId ? '已锁定真因' : `已答 ${answeredCount}/${diagnosis.questions.length}`}
+              </span>
+              <button type="button" onClick={reopenTour} className="btn-ghost px-2 py-1 font-mono-tab text-[10px]">? 指引</button>
+            </div>
           )}
         </div>
 
@@ -540,6 +595,8 @@ export default function Workbench({ theme, onToggleTheme, initialCaseId, initial
         </div>
         </div>
       </div>
+
+      <OnboardingGuide key={tourSession} open={tourOpen} onExit={closeTour} onStepChange={handleTourStep} />
 
       <ShareToRoomDialog
         open={pushOpen}
