@@ -23,7 +23,6 @@ export interface MuseumQuery extends PromiseLike<MuseumDbResult> {
   update: (values: Record<string, unknown>) => MuseumQuery;
   delete: () => MuseumQuery;
   eq: (column: string, value: unknown) => MuseumQuery;
-  in: (column: string, values: unknown[]) => MuseumQuery;
   order: (column: string, options?: { ascending?: boolean }) => MuseumQuery;
   limit: (count: number) => MuseumQuery;
 }
@@ -264,21 +263,17 @@ async function loadEntries(db: MuseumDatabase, code: string, userId: string): Pr
   );
   if (entries.length === 0) return [];
 
-  const entryIds = entries.map((entry) => String(entry.id));
-  const comments = await rowsFrom(
+  const commentGroups = await Promise.all(entries.map((entry) => rowsFrom(
     db.from("museum_comments")
       .select("id,entry_id,author_id,author_name,text,created_at")
-      .in("entry_id", entryIds)
+      .eq("entry_id", String(entry.id))
       .order("created_at", { ascending: true }),
-  );
-  const traps = await rowsFrom(db.from("museum_traps").select("entry_id,user_id").in("entry_id", entryIds));
+  )));
+  const trapGroups = await Promise.all(entries.map((entry) => rowsFrom(
+    db.from("museum_traps").select("entry_id,user_id").eq("entry_id", String(entry.id)),
+  )));
 
-  return entries.map((entry) => entryDto(
-    entry,
-    comments.filter((comment) => comment.entry_id === entry.id),
-    traps.filter((trap) => trap.entry_id === entry.id),
-    userId,
-  ));
+  return entries.map((entry, index) => entryDto(entry, commentGroups[index], trapGroups[index], userId));
 }
 
 function validateParamDiff(value: unknown): { key: string; before: string; after: string }[] {
@@ -390,10 +385,11 @@ export function createMuseumHandler(db: unknown): (request: Request, path: strin
       if (resource === "rooms" && parts.length === 3) {
         if (method === "GET") {
           const memberships = await rowsFrom(client.from("museum_members").select("room_code,joined_at").eq("user_id", userId));
-          const codes = [...new Set([SAMPLE_ROOM, ...memberships.map((member) => String(member.room_code))])];
-          const rooms = await rowsFrom(client.from("museum_rooms").select("code,name,owner_id,pinned,created_at").in("code", codes));
-          const members = await rowsFrom(client.from("museum_members").select("room_code,user_id").in("room_code", codes));
-          const entries = await rowsFrom(client.from("museum_entries").select("id,room_code").in("room_code", codes));
+          const codes = new Set([SAMPLE_ROOM, ...memberships.map((member) => String(member.room_code))]);
+          const rooms = (await rowsFrom(client.from("museum_rooms").select("code,name,owner_id,pinned,created_at")))
+            .filter((room) => codes.has(String(room.code)));
+          const members = await rowsFrom(client.from("museum_members").select("room_code,user_id"));
+          const entries = await rowsFrom(client.from("museum_entries").select("id,room_code"));
           const joinedByCode = new Map(memberships.map((member) => [String(member.room_code), member.joined_at]));
           const result = await Promise.all(rooms.map((room) => {
             const code = String(room.code);
@@ -486,7 +482,7 @@ export function createMuseumHandler(db: unknown): (request: Request, path: strin
             title: draft.title,
             domain: draft.domain,
             truth_title: draft.truthTitle,
-            probability: draft.probability,
+            probability: String(draft.probability),
             locked_id: draft.lockedId,
             action: draft.action,
             param_diff: draft.paramDiff,
