@@ -20,13 +20,20 @@ import type { DiagnosisResult } from '../types/diagnosis'
 
 type WorkspaceView = 'case' | 'new' | 'archive'
 
-export default function Workbench() {
-  const [theme, setTheme] = useState<'ink' | 'lumen'>('ink')
-  const [view, setView] = useState<WorkspaceView>('case')
+interface WorkbenchProps {
+  theme: 'ink' | 'lumen'
+  onToggleTheme: () => void
+  initialCaseId?: string
+  initialView?: 'new'
+  onShowCover: () => void
+}
+
+export default function Workbench({ theme, onToggleTheme, initialCaseId, initialView, onShowCover }: WorkbenchProps) {
+  const [view, setView] = useState<WorkspaceView>(initialView === 'new' ? 'new' : 'case')
   const [railOpen, setRailOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<CatalogFilter>('all')
-  const [activeCaseId, setActiveCaseId] = useState(presets[0].id)
+  const [activeCaseId, setActiveCaseId] = useState(initialCaseId ?? presets[0].id)
   const [answers, setAnswers] = useState<Answers>({})
   const [manualLockId, setManualLockId] = useState<string | null>(null)
   const [customCase, setCustomCase] = useState<PresetCase | null>(null)
@@ -61,11 +68,6 @@ export default function Workbench() {
   const hoveredHypothesis = hoveredHypothesisId ? diagnosis.hypotheses.find((item) => item.id === hoveredHypothesisId) : undefined
   const highlightSymptomIds = hoveredSymptomId ? [hoveredSymptomId] : hoveredHypothesis?.evidenceFor ?? []
   const flowStep = lockedId ? 5 : prunedIds.length > 0 ? 4 : answeredCount > 0 ? 3 : 2
-
-  useEffect(() => {
-    document.body.classList.remove('ink', 'lumen')
-    document.body.classList.add(theme)
-  }, [theme])
 
   useEffect(() => {
     return () => {
@@ -386,7 +388,8 @@ export default function Workbench() {
       <div className="app-shell flex h-full overflow-hidden border-[1.5px] rule-strong-border surface-folio">
         <CatalogRail
         theme={theme}
-        onToggleTheme={() => setTheme((value) => value === 'ink' ? 'lumen' : 'ink')}
+        onToggleTheme={onToggleTheme}
+        onShowCover={onShowCover}
         open={railOpen}
         onClose={() => setRailOpen(false)}
         items={filteredItems}

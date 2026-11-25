@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Archive, ChevronDown, FlaskConical, Plus, Search, X } from 'lucide-react'
+import { Archive, BookOpen, ChevronDown, FlaskConical, Plus, Search, X } from 'lucide-react'
 
 export interface CatalogItem {
   id: string
@@ -30,6 +30,7 @@ interface CatalogRailProps {
   onSelect: (id: string) => void
   onNewCase: () => void
   onArchive: () => void
+  onShowCover: () => void
   flowStep: number
   totalCount: number
 }
@@ -43,7 +44,7 @@ const FILTERS: { key: CatalogFilter; label: string }[] = [
 
 const FLOW_STEPS = ['客观取证', '贝叶斯先验', '鉴别追问', '实时剪枝', '单变量处方']
 
-export default function CatalogRail({ theme, onToggleTheme, open, onClose, items, activeItem, activeId, filter, onFilter, search, onSearch, onSelect, onNewCase, onArchive, flowStep, totalCount }: CatalogRailProps) {
+export default function CatalogRail({ theme, onToggleTheme, open, onClose, items, activeItem, activeId, filter, onFilter, search, onSearch, onSelect, onNewCase, onArchive, onShowCover, flowStep, totalCount }: CatalogRailProps) {
   const [pastOpen, setPastOpen] = useState(true)
 
   return (
@@ -140,9 +141,12 @@ export default function CatalogRail({ theme, onToggleTheme, open, onClose, items
 
           </div>
 
-        <div className="shrink-0 border-t rule-border px-3 py-2">
-          <button type="button" onClick={onArchive} className="flex w-full items-center gap-2 border rule-border px-2 py-2 text-xs text-sub hover:teal-text hover:teal-soft-bg">
+        <div className="grid shrink-0 grid-cols-2 gap-2 border-t rule-border px-3 py-2">
+          <button type="button" onClick={onArchive} className="flex items-center justify-center gap-2 border rule-border px-2 py-2 text-xs text-sub hover:teal-text hover:teal-soft-bg">
             <Archive size={13} />翻车博物馆
+          </button>
+          <button type="button" onClick={onShowCover} className="flex items-center justify-center gap-2 border rule-border px-2 py-2 text-xs text-sub hover:seal-text hover:seal-soft-bg">
+            <BookOpen size={13} />封面
           </button>
         </div>
 
