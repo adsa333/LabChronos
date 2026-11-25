@@ -23,7 +23,7 @@ function formatTime(ts: number): string {
   return `${pad(date.getMonth() + 1)}-${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`
 }
 
-export function diffLine(entry: SharedCaseEntry): string {
+function diffLine(entry: SharedCaseEntry): string {
   const first = entry.paramDiff[0]
   if (!first) return '单变量处方待补'
   return `${first.key}：${first.before} → ${first.after}`
@@ -52,11 +52,21 @@ export default function SharedMuseum({ onReplay }: SharedMuseumProps) {
     })
   }, [])
 
-  useEffect(() => { void refreshRooms() }, [refreshRooms])
+  useEffect(() => {
+    let alive = true
+    void listRooms().then((next) => {
+      if (!alive) return
+      setRooms(next)
+      setActiveCode((current) => (current && next.some((room) => room.code === current) ? current : next[0]?.code ?? ''))
+    })
+    return () => { alive = false }
+  }, [])
 
   useEffect(() => {
-    if (!activeCode) { setEntries([]); return }
-    void listEntries(activeCode).then(setEntries)
+    if (!activeCode) return
+    let alive = true
+    void listEntries(activeCode).then((next) => { if (alive) setEntries(next) })
+    return () => { alive = false }
   }, [activeCode])
 
   async function handleJoin() {
@@ -80,7 +90,8 @@ export default function SharedMuseum({ onReplay }: SharedMuseumProps) {
   }
 
   async function handleLeave(code: string) {
-    if (code === 'LAB-2826') return
+    const room = rooms.find((item) => item.code === code)
+    if (!room || room.pinned) return
     if (!window.confirm('退出这个馆？本地不会删除已推送的存证')) return
     await leaveRoom(code)
     await refreshRooms()
@@ -103,6 +114,7 @@ export default function SharedMuseum({ onReplay }: SharedMuseumProps) {
   }
 
   const activeRoom = rooms.find((room) => room.code === activeCode)
+  const visibleEntries = activeCode ? entries : []
 
   return (
     <div className="grid h-full min-h-0 grid-cols-1 gap-4 lg:grid-cols-[196px_minmax(0,1fr)]">
@@ -160,10 +172,11 @@ export default function SharedMuseum({ onReplay }: SharedMuseumProps) {
           <div className="min-w-0">
             <h3 className="truncate font-display text-sm font-semibold text-main">{activeRoom?.name ?? '课题组共享馆'}</h3>
             <p className="font-mono-tab text-[10px] text-aux">
-              {activeRoom ? `${activeRoom.code} · ${activeRoom.memberCount} 人 · ${entries.length} 条存证` : '选一个馆，或输入馆号加入'}
+              {activeRoom ? `${activeRoom.code} · ${activeRoom.memberCount} 人 · ${visibleEntries.length} 条存证` : '选一个馆，或输入馆号加入'}
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <span className="border border-dashed rule-border px-1.5 py-0.5 font-mono-tab text-[9.5px] text-aux">本地 Mock · 仅存本机</span>
             <span className="flex items-center gap-1 font-mono-tab text-[10px] text-aux"><Users size={11} />{nickname}</span>
             <button
               type="button"
@@ -180,14 +193,14 @@ export default function SharedMuseum({ onReplay }: SharedMuseumProps) {
         </div>
 
         <div className="min-h-0 flex-1 overflow-y-auto pb-4">
-          {entries.length === 0 ? (
+          {visibleEntries.length === 0 ? (
             <div className="flex h-full flex-col items-center justify-center gap-2 text-center">
               <p className="font-display text-sm text-main">这个馆还没有存证</p>
               <p className="text-[11px] text-aux">锁定真因后，在处方区点「推送到课题组馆」</p>
             </div>
           ) : (
             <div className="grid grid-cols-[repeat(auto-fill,minmax(250px,1fr))] gap-3">
-              {entries.map((entry) => (
+              {visibleEntries.map((entry) => (
                 <article key={entry.id} className="folio-card flex flex-col gap-2 p-3">
                   <div className="flex items-center justify-between font-mono-tab text-[10px] text-aux">
                     <span>{entry.authorName}</span>

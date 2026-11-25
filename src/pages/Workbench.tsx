@@ -149,6 +149,19 @@ export default function Workbench({ theme, onToggleTheme, initialCaseId, initial
   }, [activeCaseId, customCase, vaultEntries, leading.probability, lockedId, diagnosis.hypotheses])
 
   const activeItem = allItems.find((item) => item.id === activeCaseId)
+    ?? (archiveCase && archiveCase.id === activeCaseId
+      ? {
+          id: archiveCase.id,
+          kind: 'vault' as const,
+          title: '群馆存证',
+          summary: archiveCase.diagnosis.caseTitle,
+          domain: archiveCase.diagnosis.domain,
+          code: 'TEAM',
+          truthTitle: archiveCase.diagnosis.hypotheses[0]?.title,
+          probability: leading.probability,
+          locked: Boolean(lockedId),
+        }
+      : undefined)
   const filteredItems = useMemo(() => {
     const keyword = search.trim().toLowerCase()
     return allItems.filter((item) => {
@@ -351,7 +364,7 @@ export default function Workbench({ theme, onToggleTheme, initialCaseId, initial
       action: hypothesis.minimalControl.action,
       paramDiff: hypothesis.minimalControl.paramDiff,
       symptomSummary: diagnosis.observedSymptoms.find((item) => item.severity === 'critical')?.label ?? diagnosis.observedSymptoms[0]?.label ?? '',
-      log: activeCase.log,
+      log: activeCase.log.split(/\r?\n/).slice(0, 8).join('\n'),
       answers,
       diagnosis,
     }
@@ -368,7 +381,7 @@ export default function Workbench({ theme, onToggleTheme, initialCaseId, initial
       log: entry.log,
       conditions: '',
     })
-    setActiveCaseId(entry.id)
+    setActiveCaseId(`shared-${entry.id}`)
     setAnswers(entry.answers)
     setManualLockId(entry.lockedId ?? getAutomaticLockId(entry.diagnosis, entry.answers, entryScores) ?? getLeadingHypothesis(entryScores).id)
     setRecapSaved(false)

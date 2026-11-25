@@ -157,7 +157,11 @@ const SERVER_ROOMS: Record<string, string> = {
 function readState(): MockState {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return seedState()
+    if (!raw) {
+      const seeded = seedState()
+      writeState(seeded)
+      return seeded
+    }
     const parsed = JSON.parse(raw) as MockState
     if (!parsed.identity || !Array.isArray(parsed.rooms) || !parsed.entries) return seedState()
     return parsed
