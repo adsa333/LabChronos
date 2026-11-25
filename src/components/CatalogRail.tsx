@@ -138,7 +138,10 @@ export default function CatalogRail({ theme, onToggleTheme, open, onClose, items
             )}
           </div>
 
-          <button type="button" onClick={onArchive} className="mt-4 flex w-full items-center gap-2 border rule-border px-2 py-2 text-xs text-sub hover:teal-text hover:teal-soft-bg">
+          </div>
+
+        <div className="shrink-0 border-t rule-border px-3 py-2">
+          <button type="button" onClick={onArchive} className="flex w-full items-center gap-2 border rule-border px-2 py-2 text-xs text-sub hover:teal-text hover:teal-soft-bg">
             <Archive size={13} />翻车博物馆
           </button>
         </div>

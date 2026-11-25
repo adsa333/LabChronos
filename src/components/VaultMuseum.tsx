@@ -40,7 +40,7 @@ export default function VaultMuseum({ entries, presets, onRestore, onDelete, onE
   const numberById = new Map(ascending.map((entry, index) => [entry.id, String(index + 1).padStart(3, '0')]))
 
   return (
-    <section className="flex min-h-0 flex-col surface-folio">
+    <section className="flex h-full min-h-0 flex-col surface-folio">
       <div className="double-rule flex h-14 shrink-0 items-center justify-between px-6">
         <div className="flex items-baseline gap-3">
           <h2 className="font-display text-base font-semibold text-main">翻车博物馆</h2>

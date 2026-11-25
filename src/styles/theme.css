@@ -220,3 +220,41 @@ body.lumen .app-shell {
 .hover\:teal-soft-bg:hover { background: var(--teal-soft); }
 .hover\:rule-strong-border:hover { border-color: var(--rule-strong); }
 .focus\:rule-strong-border:focus { border-color: var(--rule-strong); }
+
+@media (max-height: 820px) {
+  .ink-ring-canvas {
+    width: 180px !important;
+    height: 180px !important;
+  }
+
+  .ink-ring-canvas canvas {
+    width: 180px !important;
+    height: 180px !important;
+  }
+
+  .causal-ring-content {
+    gap: 0.5rem;
+    padding: 0.5rem;
+  }
+
+  .causal-ring-caption,
+  .hypothesis-subcauses {
+    display: none;
+  }
+
+  .causal-ledger {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0.25rem;
+  }
+
+  .causal-ledger > div {
+    padding: 0.35rem 0.45rem;
+  }
+
+  .causal-ring-section {
+    flex-shrink: 0;
+    min-height: 260px;
+    max-height: 260px;
+  }
+}

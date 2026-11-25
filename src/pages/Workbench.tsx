@@ -82,7 +82,7 @@ export default function Workbench() {
       customHasImageRef.current = caseData.hasImage
       setCustomCase({
         id: caseData.id,
-        label: '自定义诊断',
+        label: caseData.diagnosis.caseTitle,
         diagnosis: caseData.diagnosis,
         image: imageBlob ? URL.createObjectURL(imageBlob) : '',
         log: caseData.log,
@@ -120,7 +120,7 @@ export default function Workbench() {
     const customItems = customCase ? [{
       id: customCase.id,
       kind: 'custom' as const,
-      title: '新建 · 自定义诊断',
+      title: customCase.diagnosis.caseTitle,
       summary: customCase.diagnosis.caseTitle,
       domain: customCase.diagnosis.domain,
       code: 'C.01',
@@ -221,7 +221,7 @@ export default function Workbench() {
     customCreatedAtRef.current = createdAt
     customHasImageRef.current = hasImage
     void saveCustomCase({ id, diagnosis: nextDiagnosis, log, conditions: '', answers: {}, createdAt, hasImage }, imageFile)
-    setCustomCase({ id, label: '自定义诊断', diagnosis: nextDiagnosis, image, log, conditions: '' })
+    setCustomCase({ id, label: nextDiagnosis.caseTitle, diagnosis: nextDiagnosis, image, log, conditions: '' })
     setActiveCaseId(id)
     setAnswers({})
     setManualLockId(null)
@@ -423,7 +423,7 @@ export default function Workbench() {
 
         <div className="min-h-0 flex-1 overflow-hidden">
           {view === 'case' && (
-            <div className="grid min-h-full grid-cols-1 overflow-y-auto xl:h-full xl:min-h-0 xl:grid-cols-2 xl:overflow-hidden">
+            <div className="grid h-full min-h-0 grid-cols-1 overflow-y-auto xl:grid-cols-2 xl:overflow-hidden">
               <EvidencePanel key={activeCase.id} preset={activeCase} highlightSymptomIds={highlightSymptomIds} onHoverSymptom={setHoveredSymptomId} />
               <div className="flex min-h-0 flex-col gap-3 p-3 pb-16 surface-folio xl:overflow-y-auto">
                 <CausalTree

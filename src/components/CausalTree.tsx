@@ -19,12 +19,12 @@ export default function CausalTree({ diagnosis, scores, prunedIds, lockedId, ans
   const ordered = useMemo(() => [...scores].sort((a, b) => b.probability - a.probability), [scores])
 
   return (
-    <section className="folio-card flex min-h-0 flex-col">
+    <section className="causal-ring-section folio-card flex min-h-0 flex-col">
       <div className="section-bar flex h-11 shrink-0 items-center justify-between px-4">
         <h2 className="font-display text-sm font-semibold text-main">II · 因果墨环与假设分布</h2>
         <span className="font-mono-tab text-[10px] tracking-[0.16em] text-aux">CAUSAL INK RING</span>
       </div>
-      <div className="flex min-h-0 flex-1 flex-wrap gap-3 p-3 xl:overflow-y-auto">
+      <div className="causal-ring-content flex min-h-0 flex-1 flex-wrap gap-3 p-3 xl:overflow-y-auto">
         <div className="shrink-0">
           <InkRingCanvas
             hypotheses={diagnosis.hypotheses}
@@ -36,9 +36,9 @@ export default function CausalTree({ diagnosis, scores, prunedIds, lockedId, ans
             hoveredSymptomId={hoveredSymptomId}
             hoveredHypothesisId={hoveredHypothesisId}
           />
-          <p className="mt-2 text-center font-mono-tab text-[9px] text-aux">墨环按概率分布 · 朱砂为联动高亮</p>
+          <p className="causal-ring-caption mt-2 text-center font-mono-tab text-[9px] text-aux">墨环按概率分布 · 朱砂为联动高亮</p>
         </div>
-        <div className="min-w-0 flex-[1_1_180px] space-y-2">
+        <div className="causal-ledger min-w-0 flex-[1_1_180px] space-y-2">
           {ordered.map((score) => {
             const hypothesis = diagnosis.hypotheses.find((item) => item.id === score.id)
             if (!hypothesis) return null
@@ -68,7 +68,7 @@ export default function CausalTree({ diagnosis, scores, prunedIds, lockedId, ans
                   <div className="h-full" style={{ width: `${Math.max(2, score.probability * 100)}%`, background: isHovered ? 'var(--seal)' : isLocked ? 'var(--teal)' : isPruned ? 'var(--rule)' : 'var(--amber)' }} />
                 </div>
                 {!isPruned && !lockedId && (
-                  <ul className="mt-1.5 space-y-0.5">
+                  <ul className="hypothesis-subcauses mt-1.5 space-y-0.5">
                     {hypothesis.subCauses.map((cause) => (
                       <li key={cause} className="truncate text-[10px] text-aux">· {cause}</li>
                     ))}

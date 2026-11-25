@@ -81,7 +81,7 @@ export default function TriagePanel({ diagnosis, answers, scores, lockedId, onAn
         </button>
       </div>
 
-      <div className="min-h-0 flex-1 overflow-y-auto p-3 pb-6">
+      <div className="min-h-0 flex-1 overflow-y-auto p-3 pb-20 min-[1400px]:pb-6">
         {!lockedId && question && (
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -137,14 +137,13 @@ export default function TriagePanel({ diagnosis, answers, scores, lockedId, onAn
                     <div key={item.key} className="border rule-border surface-plate p-2">
                       <p className="font-mono-tab text-[10px] text-aux">{item.key}</p>
                       <div className="mt-1 flex items-center gap-2 font-mono-tab text-[11px]">
-                        <span className="seal-text line-through">{item.before}</span>
+                        <span className="seal-text line-through">{item.before.replace(/^["'“”]+|["'“”]+$/g, '')}</span>
                         <span className="text-aux">→</span>
-                        <span className="font-bold teal-text">{item.after}</span>
+                        <span className="font-bold teal-text">{item.after.replace(/^["'“”]+|["'“”]+$/g, '')}</span>
                       </div>
                     </div>
                   ))}
                 </div>
-                <p className="mt-3 line-clamp-2 text-[11px] leading-5 text-sub">{lockedHypothesis.minimalControl.action}</p>
               </div>
 
               {curve && curve.length > 1 ? (
@@ -159,6 +158,8 @@ export default function TriagePanel({ diagnosis, answers, scores, lockedId, onAn
                 </div>
               )}
             </div>
+
+            <p className="text-[11px] leading-5 text-sub">{lockedHypothesis.minimalControl.action}</p>
 
             <div className="flex flex-wrap gap-2">
               <button type="button" onClick={onExportRecap} disabled={recapBusy} className="btn-primary flex items-center gap-1.5 px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-50">

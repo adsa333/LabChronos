@@ -12,9 +12,18 @@ type EvidenceTab = 'symptoms' | 'log' | 'conditions'
 
 function parseKeyValues(log: string): [string, string][] {
   const rows: [string, string][] = []
-  log.split(/\r?\n/).forEach((line) => {
-    const match = line.match(/([A-Za-z0-9_]+)\s*=\s*([^=]+)$/)
-    if (match) rows.push([match[1], match[2].trim()])
+  const occurrences = new Map<string, number>()
+  log.split(/\r?\n/).forEach((line, lineIndex) => {
+    const prefix = line.match(/^\s*([A-Za-z0-9_.-]+)/)?.[1]
+    const pattern = /([A-Za-z0-9_.-]+)=([^\s]+)/g
+    let match: RegExpExecArray | null
+    while ((match = pattern.exec(line)) !== null) {
+      const key = match[1]
+      const count = occurrences.get(key) ?? 0
+      const displayKey = count > 0 ? `${prefix && prefix !== key ? prefix : `L${lineIndex + 1}`} · ${key}` : key
+      occurrences.set(key, count + 1)
+      rows.push([displayKey, match[2].replace(/_/g, ' ')])
+    }
   })
   return rows
 }
@@ -25,11 +34,11 @@ export default function EvidencePanel({ preset, highlightSymptomIds = [], onHove
   const [lightbox, setLightbox] = useState(false)
   const isCustom = preset.id.startsWith('custom-') || preset.id.startsWith('vault-')
   const keyValues = useMemo(() => parseKeyValues(preset.log), [preset.log])
-  const conditionRows = preset.conditions.trim()
+  const csvRows = preset.conditions.trim()
     ? preset.conditions.trim().split(/\r?\n/).map((line) => line.split(','))
-    : keyValues.length > 0
-      ? [['KEY', 'VALUE'], ...keyValues]
-      : []
+    : []
+  const hasCsvHeader = csvRows.length > 0
+  const conditionRows = hasCsvHeader ? csvRows : keyValues
 
   useEffect(() => {
     if (!lightbox) return
@@ -185,13 +194,15 @@ export default function EvidencePanel({ preset, highlightSymptomIds = [], onHove
             {tab === 'conditions' && (
               conditionRows.length > 0 ? (
                 <table className="w-full border-collapse text-[10px]">
-                  <thead className="surface-tint text-aux">
-                    <tr>
-                      {conditionRows[0].map((cell) => <th key={cell} className="border-b rule-border px-2 py-2 text-left font-medium">{cell}</th>)}
-                    </tr>
-                  </thead>
+                  {hasCsvHeader && (
+                    <thead className="surface-tint text-aux">
+                      <tr>
+                        {conditionRows[0].map((cell) => <th key={cell} className="border-b rule-border px-2 py-2 text-left font-medium">{cell}</th>)}
+                      </tr>
+                    </thead>
+                  )}
                   <tbody>
-                    {conditionRows.slice(1).map((row, rowIndex) => (
+                    {conditionRows.slice(hasCsvHeader ? 1 : 0).map((row, rowIndex) => (
                       <tr key={`${row[0]}-${rowIndex}`} className="border-b rule-border last:border-0">
                         {row.map((cell, cellIndex) => (
                           <td key={`${cellIndex}-${cell}`} className={`break-words px-2 py-1.5 align-top font-mono-tab ${cellIndex === 0 ? 'text-aux' : 'text-main'}`}>{cell}</td>

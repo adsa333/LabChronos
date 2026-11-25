@@ -247,7 +247,7 @@ export default function InkRingCanvas(props: InkRingCanvasProps) {
   const percent = (shownScore.probability * 100).toFixed(1)
 
   return (
-    <div className="relative h-[204px] w-[204px] shrink-0" role="img" aria-label={`因果墨环：${shownScore.id}，${percent}%，${lockedId ? '已锁定真因' : '当前最高假设'}`}>
+    <div className="ink-ring-canvas relative h-[204px] w-[204px] shrink-0" role="img" aria-label={`因果墨环：${shownScore.id}，${percent}%，${lockedId ? '已锁定真因' : '当前最高假设'}`}>
       <canvas ref={canvasRef} className="block h-[204px] w-[204px]" aria-hidden="true" />
       <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center" aria-hidden="true">
         <span className={`font-display text-[34px] font-bold leading-tight tabular-nums ${lockedId ? 'teal-text' : 'text-main'}`}>{percent}%</span>

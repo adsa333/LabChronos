@@ -119,7 +119,7 @@ export default function NewCaseView({ onCancel, onSuccess }: NewCaseViewProps) {
   const canSubmit = Boolean(file || log.trim()) && log.length <= MAX_LOG
 
   return (
-    <section className="flex min-h-0 flex-col surface-folio">
+    <section className="flex h-full min-h-0 flex-col surface-folio">
       <div className="double-rule flex h-14 shrink-0 items-center justify-between px-6">
         <div className="flex items-center gap-3">
           <button type="button" onClick={onCancel} className="text-aux hover:seal-text"><ArrowLeft size={16} /></button>
