@@ -1,4 +1,5 @@
 import { parseDiagnosisContent } from "./diagnosis.ts";
+import { createMuseumHandler } from "./museum.ts";
 import { SYSTEM_PROMPT } from "./prompts/diagnose.ts";
 
 const MAX_IMAGE_BASE64_LENGTH = 4 * 1024 * 1024;
@@ -211,6 +212,7 @@ export function createHandler(options: HandlerOptions = {}) {
   const env = options.env ?? ((name: string) => Deno.env.get(name));
   const fetcher = options.fetch ?? globalThis.fetch;
   const rateLimits = new Map<string, { count: number; resetAt: number }>();
+  const museumHandler = createMuseumHandler(options.db);
 
   function retryAfter(request: Request): number {
     const forwarded = request.headers.get("x-forwarded-for")?.split(",")[0].trim();
@@ -230,6 +232,7 @@ export function createHandler(options: HandlerOptions = {}) {
     try {
       const path = routePath(new URL(request.url).pathname);
       if (!path) return errorResponse("not_found", 404);
+      if (path.startsWith("/api/museum/")) return museumHandler(request, path);
 
       if (path === "/api/health") {
         if (request.method !== "GET") return errorResponse("method_not_allowed", 405, { allow: "GET" });
