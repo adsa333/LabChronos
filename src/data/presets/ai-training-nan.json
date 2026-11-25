@@ -17,8 +17,8 @@
     },
     {
       "id": "s2",
-      "label": "grad_norm 在 Loss 失效前异常飙升至 48,500，且未被 GradScaler 跳过更新",
-      "detail": "日志依次记录 Epoch 12 的 grad_norm=3.8、Epoch 13 的 grad_norm=128.6、Epoch 14 的 grad_norm=48500.0；scaler_step_skipped=false，Epoch 15 出现 FP16 激活溢出并使 Loss=NaN。",
+      "label": "grad_norm 在 Loss 失效前先飙升并出现 inf",
+      "detail": "日志依次记录 Epoch 12 的 grad_norm=3.8、Epoch 13 的 grad_norm=128.6、Epoch 14 的 grad_norm=inf，随后 Loss=NaN。",
       "severity": "critical",
       "source": "log"
     },
@@ -31,8 +31,8 @@
     },
     {
       "id": "s4",
-      "label": "初始学习率为 0.05，且未使用 Warmup",
-      "detail": "优化器配置为 SGD、momentum=0.9、learning_rate=0.05、warmup_epochs=0，前 13 个 Epoch 的学习率保持不变。",
+      "label": "初始学习率为 1e-3，且未使用 Warmup",
+      "detail": "优化器配置为 learning_rate=0.001、warmup_epochs=0，前 13 个 Epoch 的学习率保持不变。",
       "severity": "warning",
       "source": "log"
     }
@@ -41,7 +41,7 @@
     {
       "id": "h1",
       "title": "AMP 下梯度溢出且未执行梯度裁剪",
-      "mechanism": "SGD 高学习率下，未裁剪的有限大梯度经未跳过更新使 FP16 权重越界，下一次前向传播激活值溢出并使 Loss 变为 NaN。",
+      "mechanism": "AMP 训练中反缩放后的异常大梯度若未经裁剪便进入参数更新，可能使权重和后续 Loss 发生数值溢出。",
       "priorScore": 40,
       "evidenceFor": [
         "s1",
@@ -61,7 +61,7 @@
             "after": "1.0"
           }
         ],
-        "expectedOutcome": "保持 SGD、学习率、数据顺序和 AMP 配置不变，只加入 max_norm=1.0 的梯度裁剪后，参数不再越过 FP16 上限，Epoch 15 不再出现 NaN。",
+        "expectedOutcome": "使用相同数据顺序、学习率和 AMP 配置重跑后，Epoch 14 及后续 Loss 保持有限值并继续下降，不再由异常梯度更新引发 NaN。",
         "expectedCurve": [
           {
             "x": 1,
@@ -121,12 +121,12 @@
         "缺少 Warmup 使优化状态尚未稳定时仍使用较大学习率"
       ],
       "minimalControl": {
-        "action": "只将初始学习率从 0.05 降为 0.005，保持 SGD 动量、数据、AMP、梯度处理和其他训练参数不变。",
+        "action": "只将初始学习率从 1e-3 降为 1e-4，保持数据、AMP、梯度处理和其他训练参数不变。",
         "paramDiff": [
           {
             "key": "learning_rate",
-            "before": "0.05",
-            "after": "0.005"
+            "before": "1e-3",
+            "after": "1e-4"
           }
         ],
         "expectedOutcome": "若学习率是主因，降低学习率后 Loss 应不再冲高为 NaN，且 grad_norm 的异常峰值明显减弱。"
@@ -158,8 +158,8 @@
     },
     {
       "id": "h4",
-      "title": "自定义损失存在未保护的 log(p) 数值下溢或目标标签越界",
-      "mechanism": "手写 torch.log(torch.softmax(logits)) 未加入 epsilon，或目标标签越界时才可能出现 NaN；标准 CrossEntropyLoss 使用 LogSumExp 稳定计算。",
+      "title": "损失函数存在 log(0) 等无效运算",
+      "mechanism": "对零概率直接取对数、除零或应用无效掩码，都可能使损失率先出现 NaN 或 Inf。",
       "priorScore": 15,
       "evidenceFor": [
         "s1"
@@ -177,14 +177,14 @@
             "after": "1e-8"
           }
         ],
-        "expectedOutcome": "若未保护的 log(p) 或标签越界是主因，修复后 Loss 应恢复有限值；若梯度仍在 Loss 失效前异常飙升，则继续检查梯度链路。"
+        "expectedOutcome": "若 log(0) 是主因，Loss 应恢复为有限值；若 grad_norm 仍在 Loss 失效前出现 inf，则应继续检查梯度链路。"
       }
     }
   ],
   "questions": [
     {
       "id": "q1",
-      "prompt": "Epoch 14 的 grad_norm 是否在 Loss 变 NaN 之前异常飙升至 48,500，且未被 GradScaler 跳过更新？",
+      "prompt": "Epoch 14 的 grad_norm 是否在 Loss 变 NaN 之前先飙升并出现 inf？",
       "howToCheck": "按时间顺序核对同一 step 的 grad_norm、优化器更新和 Loss 日志；必要时在参数更新前后分别检查模型参数是否包含 NaN。",
       "options": [
         {
@@ -197,7 +197,7 @@
           }
         },
         {
-          "label": "是，grad_norm 先异常飙升至 48,500，且未被 GradScaler 跳过更新",
+          "label": "是，梯度先飙升或出现 inf",
           "scoreDelta": {
             "h1": 20,
             "h2": 10,
