@@ -44,18 +44,11 @@ export default function VaultMuseum({ entries, presets, onRestore, onDelete, onE
 
   return (
     <section className="flex h-full min-h-0 flex-col surface-folio">
-      <div className="double-rule flex h-14 shrink-0 items-center justify-between px-6">
-        <div className="flex items-baseline gap-3">
-          <h2 className="font-display text-base font-semibold text-main">翻车博物馆</h2>
-          <span className="font-mono-tab text-[10px] tracking-[0.18em] text-aux">FAILURE MUSEUM</span>
-        </div>
-        <span className="font-mono-tab text-[10px] text-aux">{tab === 'shared' ? 'TEAM ROOMS' : `${entries.length} ENTRIES`}</span>
-      </div>
-
-      <div className="flex shrink-0 flex-wrap gap-2 border-b rule-border px-6 py-3">
+      <div className="flex shrink-0 flex-wrap items-center gap-2 border-b rule-border px-6 py-3">
         <button type="button" onClick={() => setTab('archive')} className={`border px-3 py-1.5 text-xs ${tab === 'archive' ? 'rule-strong-border seal-soft-bg seal-text' : 'rule-border text-sub'}`}>我的独立馆</button>
         <button type="button" onClick={() => setTab('shared')} className={`border px-3 py-1.5 text-xs ${tab === 'shared' ? 'rule-strong-border seal-soft-bg seal-text' : 'rule-border text-sub'}`}>课题组共享馆</button>
         <button type="button" onClick={() => setTab('public')} className={`border px-3 py-1.5 text-xs ${tab === 'public' ? 'rule-strong-border teal-soft-bg teal-text' : 'rule-border text-sub'}`}>公共避坑库</button>
+        <span className="ml-auto font-mono-tab text-[10px] text-aux">{tab === 'shared' ? 'TEAM ROOMS' : `${entries.length} ENTRIES`}</span>
       </div>
 
       {tab === 'shared' ? (
