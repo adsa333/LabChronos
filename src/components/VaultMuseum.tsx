@@ -1,7 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Download, Play, Trash2 } from 'lucide-react'
 import type { PresetCase } from '../data/presets'
+import type { SharedCaseEntry } from '../lib/museumApi'
 import type { VaultEntry } from '../lib/vaultStorage'
+import SharedMuseum from './SharedMuseum'
 
 interface VaultMuseumProps {
   entries: VaultEntry[]
@@ -11,6 +13,7 @@ interface VaultMuseumProps {
   onExport: (entry: VaultEntry) => void
   onSelectPreset: (id: string) => void
   onNewCase: () => void
+  onReplayShared: (entry: SharedCaseEntry) => void
 }
 
 function formatMonthDay(ts: number): string {
@@ -33,8 +36,8 @@ function VaultThumbnail({ blob, title }: { blob: Blob; title: string }) {
   return <img ref={imageRef} alt={title} className="h-full w-full object-contain" />
 }
 
-export default function VaultMuseum({ entries, presets, onRestore, onDelete, onExport, onSelectPreset, onNewCase }: VaultMuseumProps) {
-  const [tab, setTab] = useState<'archive' | 'public'>('archive')
+export default function VaultMuseum({ entries, presets, onRestore, onDelete, onExport, onSelectPreset, onNewCase, onReplayShared }: VaultMuseumProps) {
+  const [tab, setTab] = useState<'archive' | 'shared' | 'public'>('archive')
 
   const ascending = [...entries].sort((a, b) => a.createdAt - b.createdAt)
   const numberById = new Map(ascending.map((entry, index) => [entry.id, String(index + 1).padStart(3, '0')]))
@@ -46,14 +49,20 @@ export default function VaultMuseum({ entries, presets, onRestore, onDelete, onE
           <h2 className="font-display text-base font-semibold text-main">翻车博物馆</h2>
           <span className="font-mono-tab text-[10px] tracking-[0.18em] text-aux">FAILURE MUSEUM</span>
         </div>
-        <span className="font-mono-tab text-[10px] text-aux">{entries.length} ENTRIES</span>
+        <span className="font-mono-tab text-[10px] text-aux">{tab === 'shared' ? 'TEAM ROOMS' : `${entries.length} ENTRIES`}</span>
       </div>
 
-      <div className="flex shrink-0 gap-2 border-b rule-border px-6 py-3">
-        <button type="button" onClick={() => setTab('archive')} className={`border px-3 py-1.5 text-xs ${tab === 'archive' ? 'rule-strong-border seal-soft-bg seal-text' : 'rule-border text-sub'}`}>归档复盘</button>
+      <div className="flex shrink-0 flex-wrap gap-2 border-b rule-border px-6 py-3">
+        <button type="button" onClick={() => setTab('archive')} className={`border px-3 py-1.5 text-xs ${tab === 'archive' ? 'rule-strong-border seal-soft-bg seal-text' : 'rule-border text-sub'}`}>我的独立馆</button>
+        <button type="button" onClick={() => setTab('shared')} className={`border px-3 py-1.5 text-xs ${tab === 'shared' ? 'rule-strong-border seal-soft-bg seal-text' : 'rule-border text-sub'}`}>课题组共享馆</button>
         <button type="button" onClick={() => setTab('public')} className={`border px-3 py-1.5 text-xs ${tab === 'public' ? 'rule-strong-border teal-soft-bg teal-text' : 'rule-border text-sub'}`}>公共避坑库</button>
       </div>
 
+      {tab === 'shared' ? (
+        <div className="min-h-0 flex-1 overflow-hidden p-4">
+          <SharedMuseum onReplay={onReplayShared} />
+        </div>
+      ) : (
       <div className="min-h-0 flex-1 overflow-y-auto p-6 pb-16">
         {tab === 'archive' && entries.length === 0 && (
           <div className="flex h-full flex-col items-center justify-center gap-3">
@@ -129,6 +138,7 @@ export default function VaultMuseum({ entries, presets, onRestore, onDelete, onE
           </div>
         )}
       </div>
+      )}
     </section>
   )
 }

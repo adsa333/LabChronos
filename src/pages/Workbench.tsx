@@ -6,6 +6,7 @@ import CausalTree from '../components/CausalTree'
 import EvidencePanel from '../components/EvidencePanel'
 import NewCaseView from '../components/NewCaseView'
 import RecapCardPreview from '../components/RecapCardPreview'
+import ShareToRoomDialog from '../components/ShareToRoomDialog'
 import TriagePanel from '../components/TriagePanel'
 import VaultMuseum from '../components/VaultMuseum'
 import { presets } from '../data/presets'
@@ -14,6 +15,7 @@ import { deleteCustomCase, loadCustomCase, saveCustomCase } from '../lib/caseSto
 import { downloadRecapCard, renderRecapCard } from '../lib/recapCard'
 import { getAutomaticLockId, getLeadingHypothesis, getPrunedIds, scoreHypotheses } from '../lib/scoring'
 import type { Answers, HypothesisScore } from '../lib/scoring'
+import type { SharedCaseDraft, SharedCaseEntry, MuseumRoom } from '../lib/museumApi'
 import { deleteVaultEntry, listVaultEntries, saveVaultEntry } from '../lib/vaultStorage'
 import type { VaultEntry } from '../lib/vaultStorage'
 import type { DiagnosisResult } from '../types/diagnosis'
@@ -44,6 +46,8 @@ export default function Workbench({ theme, onToggleTheme, initialCaseId, initial
   const [recapBusy, setRecapBusy] = useState(false)
   const [recapSaved, setRecapSaved] = useState(false)
   const [recapCanSave, setRecapCanSave] = useState(true)
+  const [pushOpen, setPushOpen] = useState(false)
+  const [pushedRoom, setPushedRoom] = useState<MuseumRoom | null>(null)
   const [hoveredSymptomId, setHoveredSymptomId] = useState<string | null>(null)
   const [hoveredHypothesisId, setHoveredHypothesisId] = useState<string | null>(null)
   const customCreatedAtRef = useRef(0)
@@ -193,6 +197,7 @@ export default function Workbench({ theme, onToggleTheme, initialCaseId, initial
     setAnswers({})
     setManualLockId(null)
     setRecapSaved(false)
+    setPushedRoom(null)
   }
 
   function answerQuestion(questionId: string, optionIndex: number) {
@@ -201,6 +206,7 @@ export default function Workbench({ theme, onToggleTheme, initialCaseId, initial
     if (isEditableCustom) scheduleAnswersSave(nextAnswers)
     setManualLockId(null)
     setRecapSaved(false)
+    setPushedRoom(null)
   }
 
   function resetAnswers() {
@@ -208,6 +214,7 @@ export default function Workbench({ theme, onToggleTheme, initialCaseId, initial
     if (isEditableCustom) scheduleAnswersSave({})
     setManualLockId(null)
     setRecapSaved(false)
+    setPushedRoom(null)
   }
 
   function handleDiagnoseSuccess(nextDiagnosis: DiagnosisResult, imageFile?: File, logText?: string) {
@@ -228,6 +235,7 @@ export default function Workbench({ theme, onToggleTheme, initialCaseId, initial
     setAnswers({})
     setManualLockId(null)
     setRecapSaved(false)
+    setPushedRoom(null)
     setView('case')
   }
 
@@ -329,6 +337,46 @@ export default function Workbench({ theme, onToggleTheme, initialCaseId, initial
     }
   }
 
+  function buildSharedDraft(): SharedCaseDraft | null {
+    if (!lockedId) return null
+    const hypothesis = diagnosis.hypotheses.find((item) => item.id === lockedId)
+    if (!hypothesis) return null
+    const score = scores.find((item) => item.id === lockedId)
+    return {
+      title: diagnosis.caseTitle,
+      domain: diagnosis.domain,
+      truthTitle: hypothesis.title,
+      probability: score?.probability ?? 0,
+      lockedId,
+      action: hypothesis.minimalControl.action,
+      paramDiff: hypothesis.minimalControl.paramDiff,
+      symptomSummary: diagnosis.observedSymptoms.find((item) => item.severity === 'critical')?.label ?? diagnosis.observedSymptoms[0]?.label ?? '',
+      log: activeCase.log,
+      answers,
+      diagnosis,
+    }
+  }
+
+  function replayShared(entry: SharedCaseEntry) {
+    clearArchiveCase()
+    const entryScores = scoreHypotheses(entry.diagnosis, entry.answers)
+    setArchiveCase({
+      id: `shared-${entry.id}`,
+      label: '群馆存证',
+      diagnosis: entry.diagnosis,
+      image: '',
+      log: entry.log,
+      conditions: '',
+    })
+    setActiveCaseId(entry.id)
+    setAnswers(entry.answers)
+    setManualLockId(entry.lockedId ?? getAutomaticLockId(entry.diagnosis, entry.answers, entryScores) ?? getLeadingHypothesis(entryScores).id)
+    setRecapSaved(false)
+    setPushedRoom(null)
+    setView('case')
+    setRailOpen(false)
+  }
+
   async function openArchive() {
     clearHover()
     setView('archive')
@@ -359,6 +407,7 @@ export default function Workbench({ theme, onToggleTheme, initialCaseId, initial
     const savedLockId = entry.lockedId && restoredScores.some((score) => score.id === entry.lockedId) ? entry.lockedId : null
     setManualLockId(savedLockId ?? getAutomaticLockId(entry.diagnosis, entry.answers, restoredScores) ?? getLeadingHypothesis(restoredScores).id)
     setRecapSaved(false)
+    setPushedRoom(null)
     setView('case')
   }
 
@@ -453,6 +502,8 @@ export default function Workbench({ theme, onToggleTheme, initialCaseId, initial
                   onSaveToVault={() => void saveToVault()}
                   vaulted={recapSaved}
                   recapBusy={recapBusy}
+                  onPushToRoom={() => setPushOpen(true)}
+                  pushed={pushedRoom !== null}
                 />
                 {isEditableCustom && (
                   <button type="button" onClick={removeCustomCase} className="btn-ghost self-start px-3 py-1.5 text-[11px]">移除当前自定义病例</button>
@@ -470,11 +521,19 @@ export default function Workbench({ theme, onToggleTheme, initialCaseId, initial
               onExport={(entry) => void exportVaultEntry(entry)}
               onSelectPreset={(id) => { selectCase(id); setView('case') }}
               onNewCase={() => setView('new')}
+              onReplayShared={replayShared}
             />
           )}
         </div>
         </div>
       </div>
+
+      <ShareToRoomDialog
+        open={pushOpen}
+        draft={pushOpen ? buildSharedDraft() : null}
+        onClose={() => setPushOpen(false)}
+        onPushed={(room) => setPushedRoom(room)}
+      />
 
       <RecapCardPreview
         open={recapBusy || recapUrl !== null}

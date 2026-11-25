@@ -1,5 +1,5 @@
 import { useEffect, useMemo } from 'react'
-import { Archive, Download, Lock, RotateCcw } from 'lucide-react'
+import { Archive, Download, Lock, RotateCcw, Send } from 'lucide-react'
 import type { Answers, HypothesisScore } from '../lib/scoring'
 import type { DiagnosisResult } from '../types/diagnosis'
 
@@ -15,6 +15,8 @@ interface TriagePanelProps {
   onSaveToVault: () => void
   vaulted: boolean
   recapBusy: boolean
+  onPushToRoom: () => void
+  pushed: boolean
 }
 
 function ExpectedCurve({ curve }: { curve: { x: number; before: number | null; after: number }[] }) {
@@ -42,7 +44,7 @@ function ExpectedCurve({ curve }: { curve: { x: number; before: number | null; a
   )
 }
 
-export default function TriagePanel({ diagnosis, answers, scores, lockedId, onAnswer, onManualLock, onReset, onExportRecap, onSaveToVault, vaulted, recapBusy }: TriagePanelProps) {
+export default function TriagePanel({ diagnosis, answers, scores, lockedId, onAnswer, onManualLock, onReset, onExportRecap, onSaveToVault, vaulted, recapBusy, onPushToRoom, pushed }: TriagePanelProps) {
   const answeredCount = Object.keys(answers).length
   const lockedHypothesis = lockedId ? diagnosis.hypotheses.find((item) => item.id === lockedId) : undefined
   const lockedScore = lockedId ? scores.find((item) => item.id === lockedId) : undefined
@@ -167,6 +169,9 @@ export default function TriagePanel({ diagnosis, answers, scores, lockedId, onAn
               </button>
               <button type="button" onClick={onSaveToVault} disabled={vaulted} className="btn-ghost flex items-center gap-1.5 px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-50">
                 <Archive size={13} />{vaulted ? '已存入往期' : '存入博物馆'}
+              </button>
+              <button type="button" onClick={onPushToRoom} disabled={pushed} className="btn-ghost flex items-center gap-1.5 px-3 py-1.5 text-xs disabled:cursor-not-allowed disabled:opacity-50">
+                <Send size={13} />{pushed ? '已推送到课题组馆' : '推送到课题组馆'}
               </button>
               <button type="button" onClick={onReset} className="btn-ghost flex items-center gap-1.5 px-3 py-1.5 text-xs">
                 <RotateCcw size={13} />重新追问
