@@ -95,12 +95,14 @@ const PLATES = [AiPlate, GelPlate, ScopePlate]
 export default function EntryGate({ theme, onToggleTheme, onEnterCase, onEnterNewCase }: EntryGateProps) {
   const [activeId, setActiveId] = useState(presets[0].id)
   const [pruned, setPruned] = useState(false)
+  const [demoT, setDemoT] = useState(0)
   const [exiting, setExiting] = useState(false)
   const [reducedMotion, setReducedMotion] = useState(() => window.matchMedia('(prefers-reduced-motion: reduce)').matches)
   const readoutRef = useRef<HTMLSpanElement>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const wrapRef = useRef<HTMLDivElement>(null)
   const mouseRef = useRef({ x: CENTER, y: CENTER, active: false })
+  const demoTRef = useRef(0)
   const stateRef = useRef({ activeId, pruned, theme, reducedMotion })
   const exitTimerRef = useRef(0)
 
@@ -121,6 +123,29 @@ export default function EntryGate({ theme, onToggleTheme, onEnterCase, onEnterNe
   }, [])
 
   useEffect(() => () => window.clearTimeout(exitTimerRef.current), [])
+
+  useEffect(() => {
+    if (reducedMotion) {
+      demoTRef.current = pruned ? 1 : 0
+      setDemoT(demoTRef.current)
+      return
+    }
+    const from = demoTRef.current
+    const to = pruned ? 1 : 0
+    if (from === to) return
+    const duration = pruned ? 1600 : 500
+    const start = performance.now()
+    let frame = 0
+    const tick = (now: number) => {
+      const t = Math.min(1, (now - start) / duration)
+      const value = from + (to - from) * (t * t * (3 - 2 * t))
+      demoTRef.current = value
+      setDemoT(value)
+      if (t < 1) frame = requestAnimationFrame(tick)
+    }
+    frame = requestAnimationFrame(tick)
+    return () => cancelAnimationFrame(frame)
+  }, [pruned, reducedMotion])
 
   useEffect(() => {
     const onMove = (event: MouseEvent) => {
@@ -225,13 +250,13 @@ export default function EntryGate({ theme, onToggleTheme, onEnterCase, onEnterNe
         }
         const ease = (from: number, to: number, rate: number) => reduce ? to : from + (to - from) * rate
         segment.current = {
-          p: ease(segment.current.p, target.p, 0.075),
-          w: ease(segment.current.w, target.w, 0.055),
-          dis: ease(segment.current.dis, target.dis, 0.04),
-          win: ease(segment.current.win, target.win, 0.055),
+          p: ease(segment.current.p, target.p, 0.03),
+          w: ease(segment.current.w, target.w, 0.022),
+          dis: ease(segment.current.dis, target.dis, 0.02),
+          win: ease(segment.current.win, target.win, 0.022),
         }
       })
-      winA = reduce ? (state.pruned ? 1 : 0) : winA + ((state.pruned ? 1 : 0) - winA) * 0.055
+      winA = reduce ? (state.pruned ? 1 : 0) : winA + ((state.pruned ? 1 : 0) - winA) * 0.022
 
       context.strokeStyle = dark ? 'rgba(226,232,240,0.16)' : 'rgba(25,23,20,0.18)'
       context.lineWidth = 0.75
@@ -363,16 +388,21 @@ export default function EntryGate({ theme, onToggleTheme, onEnterCase, onEnterNe
 
   const activeIndex = Math.max(0, presets.findIndex((preset) => preset.id === activeId))
   const active = presets[activeIndex]
-  const shown = pruned ? data[activeIndex].post : data[activeIndex].prior
+  const prior = data[activeIndex].prior
+  const post = data[activeIndex].post
+  const shown = prior.map((score, i) => ({ ...score, probability: score.probability + (post[i].probability - score.probability) * demoT }))
   const leader = getLeadingHypothesis(shown)
   const leaderHypothesis = active.diagnosis.hypotheses.find((item) => item.id === leader.id)
   const Plate = PLATES[activeIndex]
   const percent = (leader.probability * 100).toFixed(1)
+  const settled = pruned && demoT >= 1
 
   function selectSpec(id: string) {
     if (id === activeId) return
     setActiveId(id)
     setPruned(false)
+    demoTRef.current = 0
+    setDemoT(0)
   }
 
   return (
@@ -472,8 +502,8 @@ export default function EntryGate({ theme, onToggleTheme, onEnterCase, onEnterNe
                   <span className="px-1.5 py-0.5 font-mono-tab text-[10.5px] font-bold" style={{ background: 'var(--ink)', color: 'var(--bg-folio)' }}>NO.{String(activeIndex + 1).padStart(3, '0')}</span>
                   <span className="font-mono-tab text-[10.5px] text-sub">{active.diagnosis.domain}</span>
                 </div>
-                <span className={`font-mono-tab text-[10.5px] font-semibold ${pruned ? 'teal-text' : 'seal-text'}`}>
-                  {pruned ? '● 2 步收敛 · 真因锁定' : '● 先验分布（4 假设）'}
+                <span className={`font-mono-tab text-[10.5px] font-semibold ${settled ? 'teal-text' : 'seal-text'}`}>
+                  {settled ? '● 2 步收敛 · 真因锁定' : '● 先验分布（4 假设）'}
                 </span>
               </div>
 
@@ -495,14 +525,14 @@ export default function EntryGate({ theme, onToggleTheme, onEnterCase, onEnterNe
                 <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center px-12 text-center">
                   <div className="mb-1.5 w-[122px] opacity-90"><Plate /></div>
                   <div className="flex items-baseline gap-1">
-                    <span className={`font-display text-4xl font-bold leading-none ${pruned ? 'teal-text' : 'text-main'}`}>{percent}</span>
+                    <span className={`font-display text-4xl font-bold leading-none ${settled ? 'teal-text' : 'text-main'}`}>{percent}</span>
                     <span className="font-display text-base text-main">%</span>
                   </div>
                   <div className="mt-1 max-w-[165px] truncate text-[11.5px] font-semibold leading-tight text-main">
-                    {pruned ? `真因 · ${leaderHypothesis?.title}` : `最高候选 · ${leaderHypothesis?.title}`}
+                    {settled ? `真因 · ${leaderHypothesis?.title}` : `最高候选 · ${leaderHypothesis?.title}`}
                   </div>
                 </div>
-                <div className={`entry-seal font-display ${pruned ? 'stamped' : ''}`} style={{ left: 16, bottom: 24 }}>真因</div>
+                <div className={`entry-seal font-display ${settled ? 'stamped' : ''}`} style={{ left: 16, bottom: 24 }}>真因</div>
               </div>
 
               <div className="mt-1 w-full space-y-2.5 border-t rule-border pt-3">
@@ -511,7 +541,7 @@ export default function EntryGate({ theme, onToggleTheme, onEnterCase, onEnterNe
                     const score = shown.find((item) => item.id === hypothesis.id)!
                     const value = score.probability * 100
                     const isPruned = pruned && value < 15
-                    const isWin = pruned && i === 0
+                    const isWin = pruned && i === 0 && demoT > 0.5
                     return (
                       <div
                         key={hypothesis.id}
