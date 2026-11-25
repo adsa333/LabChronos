@@ -423,7 +423,7 @@ export default function Workbench() {
 
         <div className="min-h-0 flex-1 overflow-hidden">
           {view === 'case' && (
-            <div className="grid h-full min-h-0 grid-cols-1 overflow-y-auto xl:grid-cols-2 xl:overflow-hidden">
+            <div className="grid h-full min-h-0 auto-rows-min grid-cols-1 overflow-y-auto xl:auto-rows-fr xl:grid-cols-2 xl:overflow-hidden">
               <EvidencePanel key={activeCase.id} preset={activeCase} highlightSymptomIds={highlightSymptomIds} onHoverSymptom={setHoveredSymptomId} />
               <div className="flex min-h-0 flex-col gap-3 p-3 pb-16 surface-folio xl:overflow-y-auto">
                 <CausalTree
