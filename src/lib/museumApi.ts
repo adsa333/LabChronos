@@ -203,7 +203,7 @@ async function requestJson<T>(path: string, init: RequestInit = {}): Promise<T> 
   const identity = getIdentity()
   const headers: Record<string, string> = {
     'X-Museum-User-Id': identity.id,
-    'X-Museum-Nickname': identity.nickname,
+    'X-Museum-Nickname': encodeURIComponent(identity.nickname),
   }
   if (init.body) headers['content-type'] = 'application/json'
 
@@ -427,7 +427,7 @@ export async function joinRoom(rawCode: string): Promise<MuseumRoom | null> {
     rememberRoom(room)
     return room
   } catch (error) {
-    if (error instanceof MuseumHttpError && error.status === 404) return null
+    if (error instanceof MuseumHttpError && (error.status === 404 || error.status === 400)) return null
     if (!isFallbackError(error)) throw error
     syncMode = 'local'
     return delay(localJoinRoom(rawCode))

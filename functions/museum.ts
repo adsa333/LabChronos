@@ -97,7 +97,15 @@ function userIdFrom(request: Request): string {
 }
 
 function nicknameFrom(request: Request, body: Row): string {
-  const raw = typeof body.nickname === "string" ? body.nickname : request.headers.get("x-museum-nickname");
+  const fromBody = typeof body.nickname === "string";
+  let raw = fromBody ? body.nickname as string : request.headers.get("x-museum-nickname");
+  if (!fromBody && typeof raw === "string") {
+    try {
+      raw = decodeURIComponent(raw);
+    } catch {
+      // Keep the original header when it is not URI-encoded.
+    }
+  }
   if (typeof raw !== "string" || !raw.trim()) return "匿名研究员";
   const nickname = raw.trim();
   if (textLength(nickname) > 16) throw new MuseumError(400, "invalid_nickname");
@@ -345,6 +353,22 @@ export function createMuseumHandler(db: unknown): (request: Request, path: strin
     current.count += 1;
   }
 
+  async function ensureMember(roomCode: string, userId: string, nickname: string): Promise<void> {
+    if (!client) return;
+    const existing = await rowFrom(
+      client.from("museum_members").select("room_code").eq("room_code", roomCode).eq("user_id", userId),
+    );
+    if (existing) return;
+    try {
+      await writeFrom(client.from("museum_members").insert({ room_code: roomCode, user_id: userId, nickname }));
+    } catch (error) {
+      const raced = await rowFrom(
+        client.from("museum_members").select("room_code").eq("room_code", roomCode).eq("user_id", userId),
+      );
+      if (!raced) throw error;
+    }
+  }
+
   return async (request: Request, path: string): Promise<Response> => {
     try {
       if (!client) return jsonResponse({ error: "database_not_configured" }, 503);
@@ -424,15 +448,7 @@ export function createMuseumHandler(db: unknown): (request: Request, path: strin
         const nickname = nicknameFrom(request, body);
         const room = await findRoom(client, code);
         if (!room) return jsonResponse({ error: "room_not_found" }, 404);
-        const existing = await rowFrom(client.from("museum_members").select("room_code").eq("room_code", code).eq("user_id", userId));
-        if (!existing) {
-          try {
-            await writeFrom(client.from("museum_members").insert({ room_code: code, user_id: userId, nickname }));
-          } catch (error) {
-            const raced = await rowFrom(client.from("museum_members").select("room_code").eq("room_code", code).eq("user_id", userId));
-            if (!raced) throw error;
-          }
-        }
+        await ensureMember(code, userId, nickname);
         const member = await rowFrom(client.from("museum_members").select("room_code,joined_at").eq("room_code", code).eq("user_id", userId));
         return jsonResponse(await roomDto(client, room, userId, member?.joined_at ?? room.created_at));
       }
@@ -460,6 +476,7 @@ export function createMuseumHandler(db: unknown): (request: Request, path: strin
           const body = await readBody(request);
           const nickname = nicknameFrom(request, body);
           const draft = validateEntryDraft(body);
+          await ensureMember(code, userId, nickname);
           const entryId = generateId("entry");
           await writeFrom(client.from("museum_entries").insert({
             id: entryId,

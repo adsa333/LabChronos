@@ -170,13 +170,15 @@ function museumRequest(
     method?: string;
     userId?: string;
     nickname?: string;
+    encodedNickname?: boolean;
     body?: unknown;
     ip?: string;
   } = {},
 ): Request {
+  const nickname = options.nickname ?? "Alice";
   const headers: Record<string, string> = {
     "x-museum-user-id": options.userId ?? "user-a",
-    "x-museum-nickname": options.nickname ?? "Alice",
+    "x-museum-nickname": options.encodedNickname ? encodeURIComponent(nickname) : nickname,
     "x-forwarded-for": options.ip ?? "198.51.100.1",
   };
   const init: RequestInit = { method: options.method ?? "GET", headers };
@@ -404,6 +406,33 @@ Deno.test("museum pushes entries, deduplicates traps and appends comments", asyn
   const sampleRoom = (await roomsResponse.json()).find((room: { code: string }) => room.code === "LAB-2826");
   assertEquals(sampleRoom.memberCount, 1);
   assertEquals(sampleRoom.entryCount, 1);
+});
+
+Deno.test("museum decodes encoded nickname and auto-joins entry authors", async () => {
+  const db = new FakeDb();
+  const handler = createHandler({ db: db as never });
+
+  const pushResponse = await handler(museumRequest("/api/museum/rooms/LAB-2826/entries", {
+    method: "POST",
+    userId: "user-c",
+    nickname: "匿名研究员",
+    encodedNickname: true,
+    body: entryDraft(),
+  }));
+  assertEquals(pushResponse.status, 200);
+  const entry = await pushResponse.json();
+  assertEquals(entry.authorName, "匿名研究员");
+
+  const member = db.tables.museum_members.find((row) => row.room_code === "LAB-2826" && row.user_id === "user-c");
+  assertEquals(member?.nickname, "匿名研究员");
+
+  const roomsResponse = await handler(museumRequest("/api/museum/rooms", {
+    userId: "user-c",
+    nickname: "匿名研究员",
+    encodedNickname: true,
+  }));
+  const sampleRoom = (await roomsResponse.json()).find((room: { code: string }) => room.code === "LAB-2826");
+  assertEquals(sampleRoom.memberCount, 2);
 });
 
 Deno.test("museum rate limits writes per IP", async () => {
