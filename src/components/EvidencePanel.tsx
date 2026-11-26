@@ -79,7 +79,7 @@ export default function EvidencePanel({ preset, highlightSymptomIds = [], onHove
   })
 
   return (
-    <section className="flex min-h-0 flex-col border-r-[1.5px] rule-strong-border surface-folio">
+    <section data-tour="evidence" className="flex min-h-0 flex-col border-r-[1.5px] rule-strong-border surface-folio">
       <div className="section-bar flex h-12 shrink-0 items-center justify-between px-4">
         <h2 className="font-display text-sm font-semibold text-main">I · 实验取证</h2>
         <span className="font-mono-tab text-[10px] tracking-[0.16em] text-aux">EVIDENCE FOLIO</span>

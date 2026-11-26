@@ -16,15 +16,25 @@ export default function ShareToRoomDialog({ open, draft, onClose, onPushed }: Sh
   const [newRoom, setNewRoom] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  const [wasOpen, setWasOpen] = useState(false)
+
+  if (open !== wasOpen) {
+    setWasOpen(open)
+    if (open) {
+      setError('')
+      setBusy(false)
+    }
+  }
 
   useEffect(() => {
     if (!open) return
-    setError('')
-    setBusy(false)
+    let alive = true
     void listRooms().then((next) => {
+      if (!alive) return
       setRooms(next)
       setSelected((current) => (next.some((room) => room.code === current) ? current : next[0]?.code ?? ''))
     })
+    return () => { alive = false }
   }, [open])
 
   if (!open || !draft) return null

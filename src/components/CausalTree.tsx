@@ -19,7 +19,7 @@ export default function CausalTree({ diagnosis, scores, prunedIds, lockedId, ans
   const ordered = useMemo(() => [...scores].sort((a, b) => b.probability - a.probability), [scores])
 
   return (
-    <section className="causal-ring-section folio-card flex min-h-0 flex-col">
+    <section data-tour="ring" className="causal-ring-section folio-card flex min-h-0 flex-col">
       <div className="section-bar flex h-11 shrink-0 items-center justify-between px-4">
         <h2 className="font-display text-sm font-semibold text-main">II · 因果墨环与假设分布</h2>
         <span className="font-mono-tab text-[10px] tracking-[0.16em] text-aux">CAUSAL INK RING</span>

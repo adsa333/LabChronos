@@ -75,7 +75,7 @@ export default function TriagePanel({ diagnosis, answers, scores, lockedId, onAn
   const progress = useMemo(() => diagnosis.questions.map((item) => answers[item.id] !== undefined), [diagnosis.questions, answers])
 
   return (
-    <section className="folio-card flex min-h-0 flex-col border-t-[1.5px] rule-top-strong">
+    <section data-tour="triage" className="folio-card flex min-h-0 flex-col border-t-[1.5px] rule-top-strong">
       <div className="section-bar flex h-11 shrink-0 items-center justify-between px-4">
         <h2 className="font-display text-sm font-semibold text-main">III · {lockedId ? '最小对照处方' : '鉴别追问'}</h2>
         <button type="button" onClick={onReset} className="flex items-center gap-1 text-[10px] text-aux hover:seal-text">

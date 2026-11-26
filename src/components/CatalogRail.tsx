@@ -90,7 +90,7 @@ export default function CatalogRail({ theme, onToggleTheme, open, onClose, items
           </div>
         </div>
 
-        <div className="min-h-0 flex-1 overflow-y-auto p-3">
+        <div data-tour="catalog" className="min-h-0 flex-1 overflow-y-auto p-3">
           <div className="space-y-1">
             <p className="px-1 font-mono-tab text-[10px] tracking-[0.16em] text-aux">当前病例</p>
             {activeItem && (
@@ -142,7 +142,7 @@ export default function CatalogRail({ theme, onToggleTheme, open, onClose, items
           </div>
 
         <div className="grid shrink-0 grid-cols-2 gap-2 border-t rule-border px-3 py-2">
-          <button type="button" onClick={onArchive} className="flex items-center justify-center gap-2 border rule-border px-2 py-2 text-xs text-sub hover:teal-text hover:teal-soft-bg">
+          <button type="button" data-tour="museum" onClick={onArchive} className="flex items-center justify-center gap-2 border rule-border px-2 py-2 text-xs text-sub hover:teal-text hover:teal-soft-bg">
             <Archive size={13} />翻车博物馆
           </button>
           <button type="button" onClick={onShowCover} className="flex items-center justify-center gap-2 border rule-border px-2 py-2 text-xs text-sub hover:seal-text hover:seal-soft-bg">
