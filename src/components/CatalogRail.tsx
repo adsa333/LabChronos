@@ -56,8 +56,8 @@ export default function CatalogRail({ theme, onToggleTheme, open, onClose, items
             <FlaskConical size={16} className="seal-text" />
             <span className="font-display text-base font-semibold text-main">LabChronos</span>
           </div>
-          <div className="flex items-center gap-1">
-            <button type="button" onClick={onToggleTheme} className="btn-ghost px-2 py-1 font-mono-tab text-[10px]">
+          <div className="flex shrink-0 items-center gap-1">
+            <button type="button" onClick={onToggleTheme} className="btn-ghost inline-flex h-6 min-w-[52px] items-center justify-center whitespace-nowrap px-2 py-1 font-mono-tab text-[10px]">
               {theme === 'ink' ? '纸 ／ 光' : '光 ／ 纸'}
             </button>
             <button type="button" aria-label="关闭目录" onClick={onClose} className="text-aux hover:text-main lg:hidden">

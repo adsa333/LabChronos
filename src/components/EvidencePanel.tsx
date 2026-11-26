@@ -118,7 +118,7 @@ export default function EvidencePanel({ preset, highlightSymptomIds = [], onHove
             <span className="font-mono-tab text-[9px] text-aux">PLATE I</span>
           </div>
           {preset.image ? (
-            <div className="flex justify-center surface-tint p-2">
+            <div className="flex min-h-[240px] items-center justify-center surface-tint p-2">
               <button type="button" onClick={() => { onHoverSymptom?.(null); setLightbox(true) }} className="relative inline-block cursor-zoom-in">
                 <img src={preset.image} alt={preset.diagnosis.caseTitle} className="block max-h-[320px] w-auto max-w-full" />
                 {bboxOverlay}

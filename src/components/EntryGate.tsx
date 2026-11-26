@@ -17,7 +17,7 @@ const DEMO_ANSWERS: Record<string, Answers> = {
   'oscilloscope-ringing': { q1: 1, q2: 0 },
 }
 
-const TAGS = ['Loss → NaN', '500 ng 过载', '25 MHz 谐振']
+const TAGS = ['Loss → NaN', '500 ng 过载', '24 MHz 振铃']
 const SIZE = 340
 const CENTER = SIZE / 2
 const R = 116

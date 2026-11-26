@@ -17,8 +17,8 @@
     },
     {
       "id": "s2",
-      "label": "grad_norm 在 Loss 失效前先飙升并出现 inf",
-      "detail": "日志依次记录 Epoch 12 的 grad_norm=3.8、Epoch 13 的 grad_norm=128.6、Epoch 14 的 grad_norm=inf，随后 Loss=NaN。",
+      "label": "grad_norm 在 Loss 失效前先飙升至有限大值 4.85e4",
+      "detail": "日志依次记录 Epoch 12 的 grad_norm=3.8、Epoch 13 的 grad_norm=128.6、Epoch 14 的 grad_norm=48500（仍为有限值）；下一轮 fp16 激活溢出后 Loss=NaN。",
       "severity": "critical",
       "source": "log"
     },
@@ -31,8 +31,8 @@
     },
     {
       "id": "s4",
-      "label": "初始学习率为 1e-3，且未使用 Warmup",
-      "detail": "优化器配置为 learning_rate=0.001、warmup_epochs=0，前 13 个 Epoch 的学习率保持不变。",
+      "label": "初始学习率为 0.05，且未使用 Warmup",
+      "detail": "优化器配置为 learning_rate=0.05、warmup_epochs=0，前 13 个 Epoch 的学习率保持不变。",
       "severity": "warning",
       "source": "log"
     }
@@ -121,12 +121,12 @@
         "缺少 Warmup 使优化状态尚未稳定时仍使用较大学习率"
       ],
       "minimalControl": {
-        "action": "只将初始学习率从 1e-3 降为 1e-4，保持数据、AMP、梯度处理和其他训练参数不变。",
+        "action": "只将初始学习率从 0.05 降为 0.005，保持数据、AMP、梯度处理和其他训练参数不变。",
         "paramDiff": [
           {
             "key": "learning_rate",
-            "before": "1e-3",
-            "after": "1e-4"
+            "before": "0.05",
+            "after": "0.005"
           }
         ],
         "expectedOutcome": "若学习率是主因，降低学习率后 Loss 应不再冲高为 NaN，且 grad_norm 的异常峰值明显减弱。"
@@ -177,18 +177,18 @@
             "after": "1e-8"
           }
         ],
-        "expectedOutcome": "若 log(0) 是主因，Loss 应恢复为有限值；若 grad_norm 仍在 Loss 失效前出现 inf，则应继续检查梯度链路。"
+        "expectedOutcome": "若 log(0) 是主因，Loss 应恢复为有限值；若 grad_norm 仍在 Loss 失效前先飙升至有限大值，则应继续检查梯度链路。"
       }
     }
   ],
   "questions": [
     {
       "id": "q1",
-      "prompt": "Epoch 14 的 grad_norm 是否在 Loss 变 NaN 之前先飙升并出现 inf？",
+      "prompt": "Epoch 14 的 grad_norm 是否在 Loss 变 NaN 之前先飙升到有限大值 4.85e4？",
       "howToCheck": "按时间顺序核对同一 step 的 grad_norm、优化器更新和 Loss 日志；必要时在参数更新前后分别检查模型参数是否包含 NaN。",
       "options": [
         {
-          "label": "否，grad_norm 始终有限且平稳",
+          "label": "否，grad_norm 始终平稳在低位",
           "scoreDelta": {
             "h1": -35,
             "h2": -10,
@@ -197,7 +197,7 @@
           }
         },
         {
-          "label": "是，梯度先飙升或出现 inf",
+          "label": "是，梯度先飙升到有限大值",
           "scoreDelta": {
             "h1": 20,
             "h2": 10,
