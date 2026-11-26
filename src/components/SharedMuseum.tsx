@@ -4,6 +4,7 @@ import {
   addComment,
   createRoom,
   getIdentity,
+  getMuseumSyncMode,
   joinRoom,
   leaveRoom,
   listEntries,
@@ -33,6 +34,7 @@ export default function SharedMuseum({ onReplay }: SharedMuseumProps) {
   const [rooms, setRooms] = useState<MuseumRoom[]>([])
   const [activeCode, setActiveCode] = useState('')
   const [entries, setEntries] = useState<SharedCaseEntry[]>([])
+  const [syncMode, setSyncMode] = useState(getMuseumSyncMode())
   const [nickname, setNickname] = useState(getIdentity().nickname)
   const [joinCode, setJoinCode] = useState('')
   const [joinError, setJoinError] = useState('')
@@ -56,6 +58,7 @@ export default function SharedMuseum({ onReplay }: SharedMuseumProps) {
     let alive = true
     void listRooms().then((next) => {
       if (!alive) return
+      setSyncMode(getMuseumSyncMode())
       setRooms(next)
       setActiveCode((current) => (current && next.some((room) => room.code === current) ? current : next[0]?.code ?? ''))
     })
@@ -65,7 +68,7 @@ export default function SharedMuseum({ onReplay }: SharedMuseumProps) {
   useEffect(() => {
     if (!activeCode) return
     let alive = true
-    void listEntries(activeCode).then((next) => { if (alive) setEntries(next) })
+    void listEntries(activeCode).then((next) => { if (alive) { setSyncMode(getMuseumSyncMode()); setEntries(next) } })
     return () => { alive = false }
   }, [activeCode])
 
@@ -176,7 +179,7 @@ export default function SharedMuseum({ onReplay }: SharedMuseumProps) {
             </p>
           </div>
           <div className="flex items-center gap-2">
-            <span className="border border-dashed rule-border px-1.5 py-0.5 font-mono-tab text-[9.5px] text-aux">本地 Mock · 仅存本机</span>
+            <span className="border border-dashed rule-border px-1.5 py-0.5 font-mono-tab text-[9.5px] text-aux">{syncMode === 'cloud' ? '云端同步' : '本地回退 · 仅存本机'}</span>
             <span className="flex items-center gap-1 font-mono-tab text-[10px] text-aux"><Users size={11} />{nickname}</span>
             <button
               type="button"
